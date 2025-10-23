@@ -56,11 +56,23 @@
             border: 2px solid #3b82f6;
         }
         
-        /* Banana SVG Icon */
         .banana-icon {
             width: 32px;
             height: 32px;
             fill: currentColor;
+        }
+        
+        .reference-indicator {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            z-index: 10;
         }
     </style>
     <script>
@@ -129,27 +141,29 @@
                 </div>
                 
                 <!-- Image Upload Area for Image-to-Image -->
-                <div class="mt-3 mb-3 flex items-center gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                        <!-- Upload Icon (Silhouette) -->
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                            <path d="M4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2"/>
+                <div class="mt-3 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                         </svg>
-                        <span id="uploadLabel">Upload</span>
-                        <input type="file" id="imageUpload" accept="image/*" class="hidden" />
-                    </label>
+                        <span class="text-sm font-medium text-purple-600">Image-to-Image (Reference)</span>
+                        <span class="text-xs text-gray-500">- Opsional untuk transformasi</span>
+                    </div>
                     <input 
                         type="text" 
                         id="imageUrl" 
-                        placeholder="Atau paste URL gambar untuk image-to-image..."
-                        class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
+                        placeholder="Paste URL gambar referensi di sini untuk image-to-image transformation..."
+                        class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none border-2 border-transparent focus:border-purple-500"
                     />
                 </div>
                 
                 <!-- URL Preview -->
-                <div id="urlPreviewContainer" class="hidden mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center gap-3">
+                <div id="urlPreviewContainer" class="hidden mb-3 p-3 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-lg flex items-center gap-3">
                     <img id="urlPreviewImg" class="url-preview-img" />
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-purple-800 dark:text-purple-200">✨ Reference Image Ready</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">AI akan menggunakan gambar ini sebagai referensi</p>
+                    </div>
                     <button onclick="clearUrlPreview()" class="px-3 py-1 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600">
                         Hapus
                     </button>
@@ -163,7 +177,6 @@
                             onclick="toggleHistory()"
                             class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-1"
                         >
-                            <!-- History Icon (Silhouette) -->
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/>
                             </svg>
@@ -195,18 +208,6 @@
         <div class="w-80 border-l border-gray-300 dark:border-gray-700 p-6 overflow-y-auto hide-scrollbar">
             <h2 class="text-xl font-bold mb-6">Pengaturan</h2>
             
-            <!-- API Token -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">API Token (Opsional)</label>
-                <input 
-                    type="password" 
-                    id="apiToken" 
-                    placeholder="Token untuk model premium"
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none text-sm"
-                />
-                <p class="text-xs text-gray-500 mt-1">Untuk model Kontext</p>
-            </div>
-            
             <!-- Model Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Model</label>
@@ -214,14 +215,14 @@
                     id="modelSelect"
                     class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                 >
-                    <option value="flux">Flux (Free)</option>
-                    <option value="turbo">Turbo (Free)</option>
-                    <option value="flux-realism">Flux Realism (Free)</option>
-                    <option value="flux-anime">Flux Anime (Free)</option>
-                    <option value="flux-3d">Flux 3D (Free)</option>
-                    <option value="any-dark">Any Dark (Free)</option>
+                    <option value="flux">Flux (Recommended for Image2Image)</option>
+                    <option value="turbo">Turbo (Fast)</option>
+                    <option value="flux-realism">Flux Realism</option>
+                    <option value="flux-anime">Flux Anime</option>
+                    <option value="flux-3d">Flux 3D</option>
+                    <option value="any-dark">Any Dark</option>
                 </select>
-                <p class="text-xs text-yellow-600 mt-1">⚠️ Kontext model memerlukan implementasi backend khusus untuk image-to-image</p>
+                <p class="text-xs text-green-600 mt-1">✓ Semua model support image-to-image dengan URL reference</p>
             </div>
             
             <!-- Aspect Ratio Presets -->
@@ -276,7 +277,6 @@
                         class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                     />
                     <button onclick="randomSeed()" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                        <!-- Dice Icon (Silhouette) -->
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm7 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-5 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                         </svg>
@@ -313,7 +313,6 @@
                     id="themeToggle"
                     class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
                 >
-                    <!-- Moon Icon (Silhouette) -->
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
@@ -327,7 +326,6 @@
                     onclick="clearAllImages()"
                     class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center gap-2"
                 >
-                    <!-- Trash Icon (Silhouette) -->
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
@@ -343,7 +341,6 @@
             <img id="modalImage" class="max-w-full max-h-full object-contain rounded-lg" />
             <div class="absolute top-6 right-6 flex gap-2">
                 <button onclick="downloadModalImage(event)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                    <!-- Download Icon -->
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                     </svg>
@@ -377,7 +374,6 @@
     </div>
     
     <script>
-        let uploadedImage = null;
         let imageCount = 0;
         let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
         
@@ -404,21 +400,6 @@
                 negativeInput.value = current ? current + ', ' + preset : preset;
             }
         }
-        
-        // Image Upload Handler
-        document.getElementById('imageUpload').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    uploadedImage = event.target.result;
-                    document.getElementById('uploadLabel').textContent = 'Uploaded';
-                    document.getElementById('imagePreview').innerHTML = 
-                        `<span class="text-green-600">✓ ${file.name.substring(0, 15)}...</span>`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
         
         // URL Input Handler with Preview
         document.getElementById('imageUrl').addEventListener('input', (e) => {
@@ -452,7 +433,7 @@
             hideUrlPreview();
         }
         
-        // Generate Button Handler
+        // Generate Button Handler with Image-to-Image Support
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('promptInput').value.trim();
             const negativePrompt = document.getElementById('negativePrompt').value.trim();
@@ -472,6 +453,9 @@
                 return;
             }
             
+            // Check if image-to-image mode
+            const isImageToImage = imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+            
             // Save to history
             addToHistory(prompt);
             
@@ -486,25 +470,28 @@
                     let url;
                     let fullPrompt = prompt;
                     
-                    // Add negative prompt properly
+                    // Add negative prompt
                     if (negativePrompt) {
                         fullPrompt += ` --no ${negativePrompt}`;
                     }
                     
-                    // Standard text-to-image (Kontext removed from frontend - requires backend)
+                    // Build URL with proper image-to-image support
                     url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`;
                     url += `?model=${model}`;
                     url += `&width=${width}&height=${height}`;
+                    
+                    // ✨ IMAGE-TO-IMAGE: Add reference parameter
+                    if (isImageToImage) {
+                        url += `&reference=${encodeURIComponent(imageUrl)}`;
+                    }
+                    
                     if (seed) url += `&seed=${parseInt(seed) + i}`;
                     if (enhance) url += `&enhance=true`;
                     if (nologo) url += `&nologo=true`;
                     if (privateMode) url += `&private=true`;
                     if (safe) url += `&safe=true`;
                     
-                    // Note: For true image-to-image with reference, you need backend implementation
-                    // This is a limitation of browser-based implementation
-                    
-                    addImageToGrid(url, prompt);
+                    addImageToGrid(url, prompt, isImageToImage);
                     
                     // Small delay between batch generations
                     if (i < batchCount - 1) {
@@ -515,11 +502,7 @@
                 // Clear inputs
                 document.getElementById('promptInput').value = '';
                 document.getElementById('negativePrompt').value = '';
-                uploadedImage = null;
-                document.getElementById('imageUpload').value = '';
                 document.getElementById('imageUrl').value = '';
-                document.getElementById('uploadLabel').textContent = 'Upload';
-                document.getElementById('imagePreview').innerHTML = '';
                 hideUrlPreview();
                 
             } catch (error) {
@@ -531,10 +514,18 @@
             }
         });
         
-        function addImageToGrid(imageUrl, prompt) {
+        function addImageToGrid(imageUrl, prompt, isImageToImage = false) {
             const grid = document.getElementById('imageGrid').firstElementChild;
             const imageContainer = document.createElement('div');
             imageContainer.className = 'relative bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden image-container shadow-lg';
+            
+            // Add reference indicator if image-to-image
+            if (isImageToImage) {
+                const indicator = document.createElement('div');
+                indicator.className = 'reference-indicator';
+                indicator.textContent = '🎨 IMG2IMG';
+                imageContainer.appendChild(indicator);
+            }
             
             const img = document.createElement('img');
             img.src = imageUrl;
@@ -546,7 +537,7 @@
             promptOverlay.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-3 text-sm';
             promptOverlay.textContent = prompt.substring(0, 60) + (prompt.length > 60 ? '...' : '');
             
-            // Action buttons (Silhouette icons)
+            // Action buttons
             const actionButtons = document.createElement('div');
             actionButtons.className = 'absolute top-2 right-2 flex gap-2 action-buttons';
             actionButtons.innerHTML = `
@@ -615,7 +606,6 @@
             }
         }
         
-        // Aspect Ratio Functions
         function setAspectRatio(width, height) {
             document.getElementById('widthInput').value = width;
             document.getElementById('heightInput').value = height;
@@ -625,7 +615,6 @@
             document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
         }
         
-        // History Functions
         function addToHistory(prompt) {
             if (prompt && !promptHistory.includes(prompt)) {
                 promptHistory.unshift(prompt);
@@ -664,7 +653,6 @@
             }
         }
         
-        // Allow Enter to generate
         document.getElementById('promptInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -672,7 +660,6 @@
             }
         });
         
-        // Initialize history
         updateHistoryList();
     </script>
 </body>
