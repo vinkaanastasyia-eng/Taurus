@@ -22,26 +22,20 @@
         .model-option:hover { background-color: rgba(0,0,0,0.05); }
         .model-option.selected { background-color: #e8f0fe; }
         .banana-icon { width: 28px; height: 28px; }
-        .sidebar { transition: transform 0.3s; }
-        .sidebar.active { transform: translateX(0); }
     </style>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
 </head>
 <body class="bg-white text-gray-900">
     <div class="flex h-screen">
         <!-- Left Sidebar -->
         <div class="w-16 border-r border-gray-200 bg-white flex flex-col items-center py-4 gap-4">
-            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleChat()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </button>
-            <button class="p-3 rounded-lg hover:bg-gray-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            </button>
-            <button class="p-3 rounded-lg hover:bg-gray-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5a.5.5 0 00.5.5H9M20 20v-5a.5.5 0 00-.5-.5h-4.5M9 4H5a1 1 0 00-1 1v3m0 0a9 9 0 0118 0m0 0v-3a1 1 0 00-1-1h-4"/></svg>
-            </button>
-            <button class="p-3 rounded-lg hover:bg-gray-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4"/></svg>
-            </button>
+            <button class="p-3 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></button>
+            <button class="p-3 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button>
+            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleHistory()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/></svg></button>
+            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleSettings()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M12 15a3 3 0 110-6 3 3 0 010 6z"/></svg></button>
+            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleTheme()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></button>
         </div>
 
         <!-- Main Content -->
@@ -54,43 +48,37 @@
                     </svg>
                     <h1 class="text-xl font-medium">Taurus AI</h1>
                 </div>
-                <button onclick="toggleSettings()" class="p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
-                </button>
-            </div>
 
-            <!-- Model Selector -->
-            <div class="border-b border-gray-200 px-8 py-3">
-                <div class="relative w-64">
-                    <button onclick="toggleModelDropdown()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 w-full">
+                <div class="relative">
+                    <button onclick="toggleModelDropdown()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
                         <span id="selectedModelIcon">⚡</span>
                         <span id="selectedModelName" class="font-medium text-sm">Flux</span>
-                        <svg class="w-4 h-4 ml-auto" id="dropdownArrow" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                        <svg class="w-4 h-4" id="dropdownArrow" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
                     </button>
-                    
-                    <div id="modelDropdown" class="model-dropdown absolute top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+
+                    <div id="modelDropdown" class="model-dropdown absolute top-full mt-2 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                         <div class="p-2">
-                            <div class="model-option selected px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux', '⚡', 'Flux')">
+                            <div class="model-option selected px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux', '⚡', 'Flux', this)">
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">⚡</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux</div>
-                                        <div class="text-xs text-gray-500">Balanced quality & speed</div>
+                                        <div class="text-xs text-gray-500">Balanced</div>
                                     </div>
                                     <svg class="w-5 h-5 text-blue-600 model-check" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('turbo', '🚀', 'Turbo')">
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('turbo', '🚀', 'Turbo', this)">
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">🚀</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Turbo</div>
-                                        <div class="text-xs text-gray-500">Ultra fast</div>
+                                        <div class="text-xs text-gray-500">Fast</div>
                                     </div>
                                     <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-realism', '📷', 'Realism')">
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-realism', '📷', 'Realism', this)">
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">📷</span>
                                     <div class="flex-1">
@@ -100,22 +88,43 @@
                                     <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-anime', '🎌', 'Anime')">
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-anime', '🎌', 'Anime', this)">
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">🎌</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux Anime</div>
-                                        <div class="text-xs text-gray-500">Animation style</div>
+                                        <div class="text-xs text-gray-500">Animation</div>
                                     </div>
                                     <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-3d', '🎮', '3D')">
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-3d', '🎮', '3D', this)">
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">🎮</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux 3D</div>
-                                        <div class="text-xs text-gray-500">3D graphics</div>
+                                        <div class="text-xs text-gray-500">3D Graphics</div>
+                                    </div>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                </div>
+                            </div>
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('any-dark', '🌙', 'Dark', this)">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">🌙</span>
+                                    <div class="flex-1">
+                                        <div class="font-medium text-sm">Any Dark</div>
+                                        <div class="text-xs text-gray-500">Dark Theme</div>
+                                    </div>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-200 my-2"></div>
+                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('kontext', '🎨', 'Kontext', this)">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">🎨</span>
+                                    <div class="flex-1">
+                                        <div class="font-medium text-sm">Kontext</div>
+                                        <div class="text-xs text-gray-500">Image2Image</div>
                                     </div>
                                     <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
@@ -125,12 +134,10 @@
                 </div>
             </div>
 
-            <!-- Content Area -->
-            <div class="flex-1 overflow-y-auto flex flex-col items-center justify-center">
-                <div id="resultsArea" class="w-full max-w-4xl px-8 py-8">
-                    <!-- Results here -->
-                </div>
-                
+            <!-- Results Area -->
+            <div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center justify-center">
+                <div id="resultsArea" class="w-full max-w-4xl px-8 py-8"></div>
+
                 <div id="emptyState" class="flex flex-col items-center justify-center py-12">
                     <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -141,8 +148,8 @@
         </div>
     </div>
 
-    <!-- Prompt Box -->
-    <div class="fixed bottom-0 left-16 right-0 border-t border-gray-200 bg-white p-6">
+    <!-- Prompt Box - Fixed Bottom -->
+    <div class="fixed bottom-0 left-16 right-0 border-t border-gray-200 bg-white p-4 z-20">
         <div class="max-w-4xl mx-auto">
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                 <textarea 
@@ -152,24 +159,44 @@
                     rows="1"
                     style="max-height: 200px;"
                 ></textarea>
-                
+
                 <div class="flex items-center justify-between mt-3">
                     <div class="flex gap-2">
-                        <button class="p-2 hover:bg-gray-200 rounded-lg" title="Upload">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        <button class="p-2 hover:bg-gray-200 rounded-lg" onclick="toggleStylePresets()" title="Styles">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                         </button>
-                        <button class="p-2 hover:bg-gray-200 rounded-lg" title="Settings">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.488.488 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                        <button class="p-2 hover:bg-gray-200 rounded-lg" onclick="toggleImageReference()" title="Image">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                         </button>
                     </div>
-                    
+
                     <button 
                         id="generateBtn"
                         onclick="generateImage()"
-                        class="p-2 hover:bg-blue-600 bg-blue-500 text-white rounded-lg"
+                        class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
                     >
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16346272 C3.34915502,0.9 2.40734225,1.00636533 1.77946707,1.4776575 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99021575 L3.03521743,10.4311088 C3.03521743,10.5882061 3.34915502,10.7453035 3.50612381,10.7453035 L16.6915026,11.5307905 C16.6915026,11.5307905 17.1624089,11.5307905 17.1624089,12.0020827 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/></svg>
                     </button>
+                </div>
+
+                <div id="stylePresetsPanel" class="hidden mt-3 pt-3 border-t border-gray-200">
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="applyStyle('realistic')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">📷 Realistic</button>
+                        <button onclick="applyStyle('anime')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🎌 Anime</button>
+                        <button onclick="applyStyle('oil-painting')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🖼️ Oil Paint</button>
+                        <button onclick="applyStyle('cyberpunk')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🌆 Cyberpunk</button>
+                        <button onclick="applyStyle('watercolor')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">💧 Watercolor</button>
+                        <button onclick="applyStyle('3d-render')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🎮 3D</button>
+                    </div>
+                </div>
+
+                <div id="imageReferencePanel" class="hidden mt-3 pt-3 border-t border-gray-200">
+                    <input 
+                        type="text" 
+                        id="imageRefUrl" 
+                        placeholder="Paste image URL for reference..."
+                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
+                    />
                 </div>
             </div>
         </div>
@@ -184,40 +211,108 @@
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
             </div>
-            
+
             <div class="space-y-6">
                 <div>
                     <label class="text-sm font-medium block mb-2">API Token</label>
                     <input type="password" id="apiToken" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" placeholder="Enter API token"/>
                 </div>
-                
-                <div>
-                    <label class="text-sm font-medium block mb-2">Width</label>
-                    <input type="number" id="widthInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-sm font-medium block mb-2">Width</label>
+                        <input type="number" id="widthInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium block mb-2">Height</label>
+                        <input type="number" id="heightInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
+                    </div>
                 </div>
-                
+
                 <div>
-                    <label class="text-sm font-medium block mb-2">Height</label>
-                    <input type="number" id="heightInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
+                    <label class="text-sm font-medium block mb-2">Quick Presets</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setSize(1024, 1024)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">1:1</button>
+                        <button onclick="setSize(1280, 720)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">16:9</button>
+                        <button onclick="setSize(720, 1280)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">9:16</button>
+                    </div>
                 </div>
-                
+
+                <div>
+                    <label class="text-sm font-medium block mb-2">Seed</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="seedInput" placeholder="Random" class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
+                        <button onclick="randomSeed()" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">🎲</button>
+                    </div>
+                </div>
+
                 <div>
                     <label class="text-sm font-medium block mb-2">Batch Count</label>
                     <input type="number" id="batchCount" value="1" min="1" max="4" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
                 </div>
-                
-                <label class="flex items-center gap-3 cursor-pointer">
+
+                <label class="flex items-center gap-3 cursor-pointer p-3 bg-red-50 border border-red-200 rounded-lg">
                     <input type="checkbox" id="nsfwToggle" class="w-4 h-4"/>
-                    <span class="text-sm">NSFW Content</span>
+                    <div>
+                        <div class="font-medium text-sm">🔞 NSFW Content</div>
+                        <div class="text-xs text-gray-500">Enable mature content</div>
+                    </div>
                 </label>
+
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="enhanceCheck" class="w-4 h-4"/>
+                        <span class="text-sm">Enhance Prompt</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="nologoCheck" checked class="w-4 h-4"/>
+                        <span class="text-sm">Remove Watermark</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="privateCheck" class="w-4 h-4"/>
+                        <span class="text-sm">Private Mode</span>
+                    </label>
+                </div>
+
+                <button onclick="clearAllResults()" class="w-full px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium">Clear All</button>
             </div>
         </div>
     </div>
+
+    <!-- History Sidebar -->
+    <div id="historySidebar" class="fixed top-0 right-0 w-96 h-full bg-white border-l border-gray-200 transform translate-x-full transition-transform z-40 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-medium">History</h2>
+                <button onclick="toggleHistory()" class="p-2 hover:bg-gray-100 rounded-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div id="historyList" class="space-y-2"></div>
+            <button onclick="clearHistory()" class="mt-6 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">Clear History</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30" onclick="closeSidebars()"></div>
 
     <script>
         let selectedModel = 'flux';
         let selectedModelIcon = '⚡';
         let selectedModelName = 'Flux';
+        let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
+
+        const stylePresets = {
+            'realistic': 'photorealistic, highly detailed, professional photography, 8k uhd',
+            'anime': 'anime style, manga, cel shaded, vibrant colors',
+            'oil-painting': 'oil painting, classical art, brush strokes, artistic',
+            'watercolor': 'watercolor painting, soft colors, artistic',
+            'cyberpunk': 'cyberpunk style, neon lights, futuristic, sci-fi',
+            '3d-render': '3d render, cgi, unreal engine, octane render'
+        };
+
+        if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
+        updateHistoryList();
 
         document.getElementById('promptInput').addEventListener('input', function() {
             this.style.height = 'auto';
@@ -231,45 +326,213 @@
             arrow.style.transform = dropdown.classList.contains('open') ? 'rotate(180deg)' : '';
         }
 
-        function selectModel(model, icon, name) {
+        function selectModel(model, icon, name, element) {
             selectedModel = model;
             selectedModelIcon = icon;
             selectedModelName = name;
-            
+
             document.getElementById('selectedModelIcon').textContent = icon;
             document.getElementById('selectedModelName').textContent = name;
-            
+
             document.querySelectorAll('.model-option').forEach(opt => {
                 opt.classList.remove('selected');
                 const check = opt.querySelector('.model-check');
                 if (check) check.classList.add('hidden');
             });
-            
-            event.target.closest('.model-option').classList.add('selected');
-            event.target.closest('.model-option').querySelector('.model-check').classList.remove('hidden');
-            
+
+            element.classList.add('selected');
+            element.querySelector('.model-check').classList.remove('hidden');
             toggleModelDropdown();
         }
 
         async function generateImage() {
             const prompt = document.getElementById('promptInput').value.trim();
             if (!prompt) return alert('Enter a prompt');
-            
+
             const btn = document.getElementById('generateBtn');
-            btn.innerHTML = '<div class="loading"></div>';
             btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div>';
+
+            const emptyState = document.getElementById('emptyState');
+            emptyState.style.display = 'none';
 
             try {
                 const width = document.getElementById('widthInput').value;
                 const height = document.getElementById('heightInput').value;
                 const batch = parseInt(document.getElementById('batchCount').value);
                 const nsfw = document.getElementById('nsfwToggle').checked;
+                const enhance = document.getElementById('enhanceCheck').checked;
+                const nologo = document.getElementById('nologoCheck').checked;
+                const imageRef = document.getElementById('imageRefUrl').value.trim();
 
-                const emptyState = document.getElementById('emptyState');
-                if (emptyState && emptyState.style.display !== 'none') {
-                    emptyState.style.display = 'none';
-                }
+                addToHistory(prompt);
 
                 for (let i = 0; i < batch; i++) {
                     let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-                    url += `?model=${selectedModel}&width=${width}&height=${height}
+                    url += `?model=${selectedModel}&width=${width}&height=${height}`;
+                    if (enhance) url += '&enhance=true';
+                    if (nologo) url += '&nologo=true';
+                    if (!nsfw) url += '&safe=true';
+                    if (imageRef && selectedModel === 'kontext') url += `&image=${encodeURIComponent(imageRef)}`;
+
+                    const result = document.createElement('div');
+                    result.className = 'image-result mb-6 p-6 bg-gray-50 rounded-2xl';
+                    result.innerHTML = `
+                        <div class="flex gap-4 mb-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">T</div>
+                            <div class="flex-1">
+                                <div class="text-sm text-gray-500 mb-1">You</div>
+                                <div class="text-base">${prompt}</div>
+                            </div>
+                        </div>
+                        <div class="ml-12 relative group">
+                            <img src="${url}" alt="${prompt}" class="w-full rounded-xl shadow-lg" loading="lazy"/>
+                            <div class="image-actions absolute top-3 right-3 flex gap-2">
+                                <button onclick='regenerateImage("${prompt.replace(/"/g, '&quot;')}", "${selectedModel}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                </button>
+                                <button onclick='downloadImage("${url}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                </button>
+                                <button onclick='copyPrompt("${prompt.replace(/"/g, '&quot;')}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                                </button>
+                                <button onclick='deleteResult(this)' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('resultsArea').insertBefore(result, document.getElementById('resultsArea').firstChild);
+                    if (i < batch - 1) await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                document.getElementById('promptInput').value = '';
+                document.getElementById('promptInput').style.height = 'auto';
+
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16346272 C3.34915502,0.9 2.40734225,1.00636533 1.77946707,1.4776575 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99021575 L3.03521743,10.4311088 C3.03521743,10.5882061 3.34915502,10.7453035 3.50612381,10.7453035 L16.6915026,11.5307905 C16.6915026,11.5307905 17.1624089,11.5307905 17.1624089,12.0020827 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/></svg>';
+            }
+        }
+
+        function regenerateImage(prompt, model) {
+            document.getElementById('promptInput').value = prompt;
+            const option = Array.from(document.querySelectorAll('.model-option')).find(opt => opt.textContent.includes(model));
+            if (option) option.click();
+            generateImage();
+        }
+
+        function downloadImage(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `taurus-ai-${Date.now()}.png`;
+            link.click();
+        }
+
+        function copyPrompt(prompt) {
+            navigator.clipboard.writeText(prompt);
+            alert('Prompt copied!');
+        }
+
+        function deleteResult(btn) {
+            if (confirm('Delete this result?')) btn.closest('.image-result').remove();
+        }
+
+        function clearAllResults() {
+            if (confirm('Clear all results?')) document.getElementById('resultsArea').innerHTML = '';
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsSidebar').classList.toggle('translate-x-full');
+        }
+
+        function toggleHistory() {
+            document.getElementById('historySidebar').classList.toggle('translate-x-full');
+        }
+
+        function toggleStylePresets() {
+            document.getElementById('stylePresetsPanel').classList.toggle('hidden');
+        }
+
+        function toggleImageReference() {
+            document.getElementById('imageReferencePanel').classList.toggle('hidden');
+        }
+
+        function applyStyle(style) {
+            const input = document.getElementById('promptInput');
+            const text = stylePresets[style];
+            if (text && !input.value.includes(text)) {
+                input.value = input.value.trim() ? input.value + ', ' + text : text;
+                input.dispatchEvent(new Event('input'));
+            }
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        }
+
+        function setSize(w, h) {
+            document.getElementById('widthInput').value = w;
+            document.getElementById('heightInput').value = h;
+        }
+
+        function randomSeed() {
+            document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
+        }
+
+        function addToHistory(prompt) {
+            if (!promptHistory.includes(prompt)) {
+                promptHistory.unshift(prompt);
+                if (promptHistory.length > 20) promptHistory.pop();
+                localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                updateHistoryList();
+            }
+        }
+
+        function updateHistoryList() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            promptHistory.forEach(prompt => {
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100';
+                item.textContent = prompt.substring(0, 80) + (prompt.length > 80 ? '...' : '');
+                item.onclick = () => {
+                    document.getElementById('promptInput').value = prompt;
+                    toggleHistory();
+                };
+                list.appendChild(item);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all history?')) {
+                promptHistory = [];
+                localStorage.removeItem('promptHistory');
+                updateHistoryList();
+            }
+        }
+
+        function closeSidebars() {
+            document.getElementById('settingsSidebar').classList.add('translate-x-full');
+            document.getElementById('historySidebar').classList.add('translate-x-full');
+        }
+
+        document.getElementById('promptInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateImage();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('modelDropdown');
+            if (!e.target.closest('button[onclick="toggleModelDropdown()"]') && !e.target.closest('#modelDropdown')) {
+                if (dropdown.classList.contains('open')) toggleModelDropdown();
+            }
+        });
+    </script>
+</body>
+</html>
