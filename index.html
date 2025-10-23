@@ -3,33 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taurus AI - Advanced Image Generator</title>
+    <title>Taurus AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Google Sans', 'Roboto', sans-serif;
+        }
+        
         textarea::-webkit-scrollbar,
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
+        
         textarea,
         .hide-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
         
-        .image-preview {
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .image-preview:hover {
-            transform: scale(1.02);
-        }
-        
         .loading {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #3498db;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
         }
         
@@ -38,187 +41,218 @@
             100% { transform: rotate(360deg); }
         }
         
-        .image-container:hover .action-buttons {
-            opacity: 1;
+        .model-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
         
-        .action-buttons {
+        .model-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .model-card.selected {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+        
+        .dark .model-card.selected {
+            border-color: #8ab4f8;
+            background: #1e3a5f;
+        }
+        
+        .image-result {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .image-actions {
             opacity: 0;
             transition: opacity 0.2s;
         }
         
-        .url-preview-img {
-            max-width: 200px;
-            max-height: 200px;
-            object-fit: contain;
-            border-radius: 8px;
-            border: 2px solid #3b82f6;
+        .image-result:hover .image-actions {
+            opacity: 1;
+        }
+        
+        .sidebar-overlay {
+            backdrop-filter: blur(4px);
         }
         
         .banana-icon {
-            width: 32px;
-            height: 32px;
-            fill: currentColor;
-        }
-        
-        .style-badge {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            z-index: 10;
+            width: 28px;
+            height: 28px;
         }
     </style>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {},
-            },
         }
     </script>
 </head>
-<body class="bg-white dark:bg-[#131314] text-gray-900 dark:text-gray-100">
-    <div class="flex h-screen">
-        <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col p-6">
-            <!-- Header -->
-            <div class="mb-4 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <svg class="banana-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20.5 7c-.2-.6-.6-1-1.2-1.3-.8-.4-1.8-.4-2.6 0-1.7.7-3 2.3-4 4.2-.3.6-.6 1.2-.8 1.8-.1-.4-.3-.8-.5-1.2-1-2-2.4-3.7-4.2-4.4-.9-.4-1.9-.4-2.8 0-.6.3-1 .7-1.2 1.3-.3.8-.2 1.7.2 2.5.8 1.7 2.4 3 4.2 4 .6.3 1.2.6 1.8.8-.4.1-.8.3-1.2.5-2 1-3.7 2.4-4.4 4.2-.4.9-.4 1.9 0 2.8.3.6.7 1 1.3 1.2.8.3 1.7.2 2.5-.2 1.7-.8 3-2.4 4-4.2.3-.6.6-1.2.8-1.8.1.4.3.8.5 1.2 1 2 2.4 3.7 4.2 4.4.9.4 1.9.4 2.8 0 .6-.3 1-.7 1.2-1.3.3-.8.2-1.7-.2-2.5-.8-1.7-2.4-3-4.2-4-.6-.3-1.2-.6-1.8-.8.4-.1.8-.3 1.2-.5 2-1 3.7-2.4 4.4-4.2.4-.9.4-1.9 0-2.8z"/>
+<body class="bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#1f1f1f] border-b border-gray-200 dark:border-gray-800">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <svg class="banana-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                    <path d="M20.5 7c-.2-.6-.6-1-1.2-1.3-.8-.4-1.8-.4-2.6 0-1.7.7-3 2.3-4 4.2-.3.6-.6 1.2-.8 1.8-.1-.4-.3-.8-.5-1.2-1-2-2.4-3.7-4.2-4.4-.9-.4-1.9-.4-2.8 0-.6.3-1 .7-1.2 1.3-.3.8-.2 1.7.2 2.5.8 1.7 2.4 3 4.2 4 .6.3 1.2.6 1.8.8-.4.1-.8.3-1.2.5-2 1-3.7 2.4-4.4 4.2-.4.9-.4 1.9 0 2.8.3.6.7 1 1.3 1.2.8.3 1.7.2 2.5-.2 1.7-.8 3-2.4 4-4.2.3-.6.6-1.2.8-1.8.1.4.3.8.5 1.2 1 2 2.4 3.7 4.2 4.4.9.4 1.9.4 2.8 0 .6-.3 1-.7 1.2-1.3.3-.8.2-1.7-.2-2.5-.8-1.7-2.4-3-4.2-4-.6-.3-1.2-.6-1.8-.8.4-.1.8-.3 1.2-.5 2-1 3.7-2.4 4.4-4.2.4-.9.4-1.9 0-2.8z"/>
+                </svg>
+                <h1 class="text-xl font-medium">Taurus AI</h1>
+            </div>
+            
+            <!-- Right Actions -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleHistory()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/>
                     </svg>
-                    <h1 class="text-2xl font-bold">Taurus AI</h1>
-                </div>
-                <div class="text-sm text-gray-500">
-                    <span id="imageCount">0</span> gambar dibuat
+                </button>
+                <button onclick="toggleSettings()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.488.488 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                </button>
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="pt-16">
+        <div class="max-w-4xl mx-auto px-6 py-8">
+            <!-- Model Selection - Gemini Style -->
+            <div id="modelSelector" class="mb-8">
+                <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Pilih Model</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div class="model-card selected p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('flux', this)" data-model="flux">
+                        <div class="text-lg mb-1">⚡</div>
+                        <div class="font-medium text-sm">Flux</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Balanced</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('turbo', this)" data-model="turbo">
+                        <div class="text-lg mb-1">🚀</div>
+                        <div class="font-medium text-sm">Turbo</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Ultra Fast</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('flux-realism', this)" data-model="flux-realism">
+                        <div class="text-lg mb-1">📷</div>
+                        <div class="font-medium text-sm">Realism</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Photo-realistic</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('flux-anime', this)" data-model="flux-anime">
+                        <div class="text-lg mb-1">🎌</div>
+                        <div class="font-medium text-sm">Anime</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Japanese style</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('flux-3d', this)" data-model="flux-3d">
+                        <div class="text-lg mb-1">🎮</div>
+                        <div class="font-medium text-sm">3D Render</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">CGI quality</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('any-dark', this)" data-model="any-dark">
+                        <div class="text-lg mb-1">🌙</div>
+                        <div class="font-medium text-sm">Dark</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Dark theme</div>
+                    </div>
+                    <div class="model-card p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl" onclick="selectModel('kontext', this)" data-model="kontext">
+                        <div class="text-lg mb-1">🎨</div>
+                        <div class="font-medium text-sm">Kontext</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Image2Image</div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Generated Images Grid -->
-            <div id="imageGrid" class="flex-1 overflow-y-auto hide-scrollbar mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <!-- Images will be displayed here -->
-                </div>
+            <!-- Results Area -->
+            <div id="resultsArea" class="mb-8">
+                <!-- Generated images will appear here -->
             </div>
             
-            <!-- Prompt Input Area -->
-            <div class="border border-gray-300 dark:border-gray-700 rounded-lg p-4">
-                <!-- Style Preset -->
-                <div class="mb-2">
-                    <select id="stylePreset" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm" onchange="applyStylePreset()">
-                        <option value="">Pilih Style Preset (Opsional)</option>
-                        <option value="realistic">📷 Realistic Photography</option>
-                        <option value="anime">🎌 Anime Style</option>
-                        <option value="cartoon">🎨 Cartoon/Comic</option>
-                        <option value="oil-painting">🖼️ Oil Painting</option>
-                        <option value="watercolor">💧 Watercolor</option>
-                        <option value="cyberpunk">🌆 Cyberpunk</option>
-                        <option value="fantasy">🧙 Fantasy Art</option>
-                        <option value="horror">👻 Horror/Dark</option>
-                        <option value="minimalist">⚪ Minimalist</option>
-                        <option value="vintage">📸 Vintage/Retro</option>
-                        <option value="3d-render">🎮 3D Render</option>
-                        <option value="sketch">✏️ Pencil Sketch</option>
-                    </select>
-                </div>
-
-                <!-- Main Prompt -->
-                <textarea 
-                    id="promptInput" 
-                    placeholder="Masukkan prompt Anda di sini..."
-                    class="w-full bg-transparent border-none outline-none resize-none mb-2"
-                    rows="2"
-                ></textarea>
-                
-                <!-- Negative Prompt with Presets -->
-                <div class="mb-2">
-                    <div class="flex gap-2 mb-1">
-                        <select id="negativePreset" class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded" onchange="applyNegativePreset()">
-                            <option value="">Pilih Preset Negative</option>
-                            <option value="ugly, blurry, low quality, deformed">Quality Issues</option>
-                            <option value="nsfw, nude, violence, gore, blood">NSFW/Violence</option>
-                            <option value="watermark, text, logo, signature">Watermarks/Text</option>
-                            <option value="cartoon, anime, 3d render, painting">Non-Realistic</option>
-                            <option value="dark, night, shadow, dim lighting">Dark/Shadow</option>
-                            <option value="distorted, mutation, extra limbs, duplicate">Deformations</option>
-                        </select>
-                    </div>
-                    <textarea 
-                        id="negativePrompt" 
-                        placeholder="Negative prompt (opsional)..."
-                        class="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-500"
-                        rows="1"
-                    ></textarea>
-                </div>
-                
-                <!-- Image-to-Image Reference -->
-                <div class="mt-3 mb-3">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                        </svg>
-                        <span class="text-sm font-medium text-purple-600">Image-to-Image Reference</span>
-                    </div>
-                    <input 
-                        type="text" 
-                        id="imageUrl" 
-                        placeholder="Paste URL gambar referensi (hanya model Kontext)..."
-                        class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
-                    />
-                </div>
-                
-                <!-- URL Preview -->
-                <div id="urlPreviewContainer" class="hidden mb-3 p-3 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-lg flex items-center gap-3">
-                    <img id="urlPreviewImg" class="url-preview-img" />
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-purple-800 dark:text-purple-200">✨ Reference Ready</p>
-                    </div>
-                    <button onclick="clearUrlPreview()" class="px-3 py-1 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600">
-                        Hapus
-                    </button>
-                </div>
-                
-                <div class="flex justify-between items-center">
-                    <div class="flex gap-2">
-                        <button 
-                            onclick="toggleHistory()"
-                            class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-1"
-                        >
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/>
-                            </svg>
-                            History
-                        </button>
-                    </div>
-                    <div class="flex gap-2">
-                        <input 
-                            type="number" 
-                            id="batchCount" 
-                            value="1"
-                            min="1"
-                            max="4"
-                            class="w-16 px-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none text-center"
-                        />
-                        <button 
-                            id="generateBtn"
-                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-                        >
-                            Generate
-                        </button>
+            <!-- Prompt Input - Gemini Style -->
+            <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-800 py-4">
+                <div class="max-w-4xl mx-auto px-6">
+                    <div class="bg-gray-50 dark:bg-[#2a2a2a] rounded-3xl p-4 shadow-sm">
+                        <textarea 
+                            id="promptInput" 
+                            placeholder="Describe what you want to create..."
+                            class="w-full bg-transparent border-none outline-none resize-none text-base"
+                            rows="1"
+                            style="max-height: 200px;"
+                        ></textarea>
+                        
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleStylePresets()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" title="Style Presets">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="toggleImageReference()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" title="Add Reference Image">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                                    </svg>
+                                </button>
+                                <span class="text-xs text-gray-500" id="charCount">0</span>
+                            </div>
+                            
+                            <button 
+                                id="generateBtn"
+                                onclick="generateImage()"
+                                class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium text-sm transition-all"
+                            >
+                                <span>Generate</span>
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Expandable Options -->
+                        <div id="stylePresetsPanel" class="hidden mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="applyStyle('realistic')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">📷 Realistic</button>
+                                <button onclick="applyStyle('anime')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">🎌 Anime</button>
+                                <button onclick="applyStyle('oil-painting')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">🖼️ Oil Paint</button>
+                                <button onclick="applyStyle('cyberpunk')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">🌆 Cyberpunk</button>
+                                <button onclick="applyStyle('watercolor')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">💧 Watercolor</button>
+                                <button onclick="applyStyle('3d-render')" class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">🎮 3D</button>
+                            </div>
+                        </div>
+                        
+                        <div id="imageReferencePanel" class="hidden mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <input 
+                                type="text" 
+                                id="imageRefUrl" 
+                                placeholder="Paste image URL for reference (Kontext model only)..."
+                                class="w-full px-3 py-2 bg-white dark:bg-[#1f1f1f] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Right Sidebar -->
-        <div class="w-80 border-l border-gray-300 dark:border-gray-700 p-6 overflow-y-auto hide-scrollbar">
-            <h2 class="text-xl font-bold mb-6">Pengaturan</h2>
+    </main>
+    
+    <!-- Settings Sidebar -->
+    <div id="settingsSidebar" class="fixed top-0 right-0 w-96 h-full bg-white dark:bg-[#1f1f1f] border-l border-gray-200 dark:border-gray-800 transform translate-x-full transition-transform duration-300 z-40 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-medium">Settings</h2>
+                <button onclick="toggleSettings()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
             
             <!-- API Token -->
             <div class="mb-6">
@@ -226,91 +260,57 @@
                 <input 
                     type="password" 
                     id="apiToken" 
-                    placeholder="Masukkan API token Anda"
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none text-sm"
+                    placeholder="Enter your Pollinations API token"
+                    class="w-full px-3 py-2 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
                 />
-                <p class="text-xs text-green-600 mt-1">✓ Diperlukan untuk image-to-image</p>
+                <p class="text-xs text-gray-500 mt-1">Required for Kontext model (image-to-image)</p>
             </div>
             
-            <!-- Model Selection -->
+            <!-- Dimensions -->
             <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Model</label>
-                <select 
-                    id="modelSelect"
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
-                >
-                    <option value="flux">Flux (Recommended)</option>
-                    <option value="turbo">Turbo (Fast)</option>
-                    <option value="flux-realism">Flux Realism</option>
-                    <option value="flux-anime">Flux Anime</option>
-                    <option value="flux-3d">Flux 3D</option>
-                    <option value="any-dark">Any Dark</option>
-                    <option value="kontext">Kontext (Image2Image)</option>
-                </select>
-            </div>
-
-            <!-- NSFW Toggle -->
-            <div class="mb-6 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                <label class="flex items-center justify-between cursor-pointer">
+                <label class="block text-sm font-medium mb-2">Image Size</label>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <span class="text-sm font-medium text-red-700 dark:text-red-300">🔞 NSFW Mode</span>
-                        <p class="text-xs text-red-600 dark:text-red-400 mt-1">Aktifkan untuk konten dewasa</p>
+                        <label class="text-xs text-gray-500">Width</label>
+                        <input 
+                            type="number" 
+                            id="widthInput" 
+                            value="1024"
+                            class="w-full px-3 py-2 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
+                        />
                     </div>
-                    <input type="checkbox" id="nsfwCheck" class="w-5 h-5" />
-                </label>
-            </div>
-            
-            <!-- Aspect Ratio -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Aspect Ratio</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setAspectRatio(1024, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">1:1</button>
-                    <button onclick="setAspectRatio(1280, 720)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">16:9</button>
-                    <button onclick="setAspectRatio(720, 1280)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">9:16</button>
-                    <button onclick="setAspectRatio(1024, 768)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">4:3</button>
-                    <button onclick="setAspectRatio(768, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">3:4</button>
-                    <button onclick="setAspectRatio(1920, 1080)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">Full HD</button>
+                    <div>
+                        <label class="text-xs text-gray-500">Height</label>
+                        <input 
+                            type="number" 
+                            id="heightInput" 
+                            value="1024"
+                            class="w-full px-3 py-2 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
+                        />
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Width & Height -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Lebar (Width)</label>
-                <input 
-                    type="number" 
-                    id="widthInput" 
-                    value="1024"
-                    min="256"
-                    max="2048"
-                    step="64"
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
-                />
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Tinggi (Height)</label>
-                <input 
-                    type="number" 
-                    id="heightInput" 
-                    value="1024"
-                    min="256"
-                    max="2048"
-                    step="64"
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
-                />
+                
+                <div class="mt-3">
+                    <label class="text-xs text-gray-500 mb-2 block">Quick Presets</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setSize(1024, 1024)" class="px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">1:1</button>
+                        <button onclick="setSize(1280, 720)" class="px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">16:9</button>
+                        <button onclick="setSize(720, 1280)" class="px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">9:16</button>
+                    </div>
+                </div>
             </div>
             
             <!-- Seed -->
             <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Seed</label>
+                <label class="block text-sm font-medium mb-2">Seed (Optional)</label>
                 <div class="flex gap-2">
                     <input 
                         type="number" 
                         id="seedInput" 
                         placeholder="Random"
-                        class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
+                        class="flex-1 px-3 py-2 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
                     />
-                    <button onclick="randomSeed()" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                    <button onclick="randomSeed()" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm7 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-5 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                         </svg>
@@ -318,227 +318,221 @@
                 </div>
             </div>
             
+            <!-- Batch -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">Batch Count</label>
+                <input 
+                    type="number" 
+                    id="batchCount" 
+                    value="1"
+                    min="1"
+                    max="4"
+                    class="w-full px-3 py-2 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-600 rounded-lg text-sm outline-none"
+                />
+            </div>
+            
+            <!-- NSFW Toggle -->
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <div class="font-medium text-sm text-red-700 dark:text-red-300">🔞 NSFW Content</div>
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-1">Enable mature content</p>
+                    </div>
+                    <input type="checkbox" id="nsfwToggle" class="w-5 h-5" />
+                </label>
+            </div>
+            
             <!-- Options -->
             <div class="space-y-3">
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" id="enhanceCheck" class="w-4 h-4" />
                     <span class="text-sm">Enhance Prompt</span>
                 </label>
                 
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" id="nologoCheck" checked class="w-4 h-4" />
-                    <span class="text-sm">Tanpa Logo</span>
+                    <span class="text-sm">Remove Watermark</span>
                 </label>
                 
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" id="privateCheck" class="w-4 h-4" />
-                    <span class="text-sm">Private</span>
+                    <span class="text-sm">Private Mode</span>
                 </label>
-            </div>
-            
-            <!-- Theme Toggle -->
-            <div class="mt-8 pt-6 border-t border-gray-300 dark:border-gray-700">
-                <button 
-                    id="themeToggle"
-                    class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
-                >
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                    </svg>
-                    Toggle Dark Mode
-                </button>
             </div>
             
             <!-- Clear All -->
-            <div class="mt-3">
+            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
                 <button 
-                    onclick="clearAllImages()"
-                    class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center gap-2"
+                    onclick="clearAllResults()"
+                    class="w-full px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium"
                 >
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                    </svg>
-                    Clear All
+                    Clear All Results
                 </button>
             </div>
-        </div>
-    </div>
-    
-    <!-- Modal -->
-    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" onclick="closeModal()">
-        <div class="max-w-5xl max-h-screen p-4 relative">
-            <img id="modalImage" class="max-w-full max-h-full object-contain rounded-lg" />
-            <div class="absolute top-6 right-6 flex gap-2">
-                <button onclick="downloadModalImage(event)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Download
-                </button>
-                <button onclick="closeModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">✕</button>
-            </div>
-            <div id="modalPrompt" class="absolute bottom-6 left-6 right-6 bg-black bg-opacity-75 text-white p-4 rounded-lg"></div>
         </div>
     </div>
     
     <!-- History Sidebar -->
-    <div id="historySidebar" class="hidden fixed top-0 right-0 w-80 h-screen bg-white dark:bg-[#131314] border-l border-gray-300 dark:border-gray-700 z-40 shadow-2xl">
-        <div class="p-6 h-full flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">History</h2>
-                <button onclick="toggleHistory()" class="text-2xl">&times;</button>
+    <div id="historySidebar" class="fixed top-0 right-0 w-96 h-full bg-white dark:bg-[#1f1f1f] border-l border-gray-200 dark:border-gray-800 transform translate-x-full transition-transform duration-300 z-40 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-medium">Prompt History</h2>
+                <button onclick="toggleHistory()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
             </div>
-            <div id="historyList" class="flex-1 overflow-y-auto space-y-2"></div>
-            <button onclick="clearHistory()" class="mt-4 w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+            
+            <div id="historyList" class="space-y-2">
+                <!-- History items -->
+            </div>
+            
+            <button 
+                onclick="clearHistory()"
+                class="mt-6 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium"
+            >
                 Clear History
             </button>
         </div>
     </div>
     
+    <!-- Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 sidebar-overlay hidden z-30" onclick="closeSidebars()"></div>
+    
     <script>
-        let imageCount = 0;
+        let selectedModel = 'flux';
         let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
-        let generatedImages = [];
         
-        // Style presets data
         const stylePresets = {
-            'realistic': 'photorealistic, highly detailed, professional photography, 8k uhd, dslr, soft lighting, high quality',
-            'anime': 'anime style, manga, cel shaded, vibrant colors, japanese animation',
-            'cartoon': 'cartoon style, comic book art, bold lines, colorful, illustrated',
-            'oil-painting': 'oil painting, classical art, brush strokes, artistic, museum quality',
-            'watercolor': 'watercolor painting, soft colors, artistic, hand painted',
-            'cyberpunk': 'cyberpunk style, neon lights, futuristic, sci-fi, blade runner aesthetic',
-            'fantasy': 'fantasy art, magical, ethereal, epic, dungeons and dragons style',
-            'horror': 'horror art, dark, scary, creepy atmosphere, gothic',
-            'minimalist': 'minimalist, simple, clean lines, modern, abstract',
-            'vintage': 'vintage style, retro, old photograph, nostalgic, aged',
-            '3d-render': '3d render, cgi, unreal engine, octane render, highly detailed',
-            'sketch': 'pencil sketch, hand drawn, black and white, artistic drawing'
+            'realistic': 'photorealistic, highly detailed, professional photography, 8k uhd',
+            'anime': 'anime style, manga, cel shaded, vibrant colors',
+            'oil-painting': 'oil painting, classical art, brush strokes, artistic',
+            'watercolor': 'watercolor painting, soft colors, artistic',
+            'cyberpunk': 'cyberpunk style, neon lights, futuristic, sci-fi',
+            '3d-render': '3d render, cgi, unreal engine, octane render'
         };
         
-        updateImageCount();
-        
-        // Theme
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        });
-        
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        // Initialize
+        if (localStorage.theme === 'dark') {
             document.documentElement.classList.add('dark');
         }
         
-        // Style preset application
-        function applyStylePreset() {
-            const preset = document.getElementById('stylePreset').value;
-            const promptInput = document.getElementById('promptInput');
-            if (preset && stylePresets[preset]) {
-                const currentPrompt = promptInput.value.trim();
-                if (!currentPrompt.includes(stylePresets[preset])) {
-                    promptInput.value = currentPrompt ? currentPrompt + ', ' + stylePresets[preset] : stylePresets[preset];
-                }
-            }
-        }
+        updateHistoryList();
         
-        function applyNegativePreset() {
-            const preset = document.getElementById('negativePreset').value;
-            const negativeInput = document.getElementById('negativePrompt');
-            if (preset) {
-                const current = negativeInput.value.trim();
-                negativeInput.value = current ? current + ', ' + preset : preset;
-            }
-        }
-        
-        // URL Preview
-        document.getElementById('imageUrl').addEventListener('input', (e) => {
-            const url = e.target.value.trim();
-            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-                showUrlPreview(url);
-            } else {
-                hideUrlPreview();
-            }
+        // Auto-resize textarea
+        const promptInput = document.getElementById('promptInput');
+        promptInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            document.getElementById('charCount').textContent = this.value.length;
         });
         
-        function showUrlPreview(url) {
-            const container = document.getElementById('urlPreviewContainer');
-            const img = document.getElementById('urlPreviewImg');
-            img.src = url;
-            img.onerror = () => {
-                hideUrlPreview();
-                alert('URL gambar tidak valid');
-            };
-            img.onload = () => container.classList.remove('hidden');
+        function selectModel(model, element) {
+            selectedModel = model;
+            document.querySelectorAll('.model-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
         }
         
-        function hideUrlPreview() {
-            document.getElementById('urlPreviewContainer').classList.add('hidden');
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         }
         
-        function clearUrlPreview() {
-            document.getElementById('imageUrl').value = '';
-            hideUrlPreview();
-        }
-        
-        // Generate Button
-        document.getElementById('generateBtn').addEventListener('click', async () => {
-            const prompt = document.getElementById('promptInput').value.trim();
-            const negativePrompt = document.getElementById('negativePrompt').value.trim();
-            const model = document.getElementById('modelSelect').value;
-            const width = document.getElementById('widthInput').value;
-            const height = document.getElementById('heightInput').value;
-            const seed = document.getElementById('seedInput').value;
-            const enhance = document.getElementById('enhanceCheck').checked;
-            const nologo = document.getElementById('nologoCheck').checked;
-            const privateMode = document.getElementById('privateCheck').checked;
-            const nsfw = document.getElementById('nsfwCheck').checked;
-            const imageUrl = document.getElementById('imageUrl').value.trim();
-            const batchCount = parseInt(document.getElementById('batchCount').value) || 1;
-            const apiToken = document.getElementById('apiToken').value.trim();
-            const stylePreset = document.getElementById('stylePreset').value;
+        function toggleSettings() {
+            const sidebar = document.getElementById('settingsSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const isOpen = !sidebar.classList.contains('translate-x-full');
             
+            if (isOpen) {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            } else {
+                closeSidebars();
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+            }
+        }
+        
+        function toggleHistory() {
+            const sidebar = document.getElementById('historySidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const isOpen = !sidebar.classList.contains('translate-x-full');
+            
+            if (isOpen) {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            } else {
+                closeSidebars();
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+            }
+        }
+        
+        function closeSidebars() {
+            document.getElementById('settingsSidebar').classList.add('translate-x-full');
+            document.getElementById('historySidebar').classList.add('translate-x-full');
+            document.getElementById('sidebarOverlay').classList.add('hidden');
+        }
+        
+        function toggleStylePresets() {
+            const panel = document.getElementById('stylePresetsPanel');
+            panel.classList.toggle('hidden');
+        }
+        
+        function toggleImageReference() {
+            const panel = document.getElementById('imageReferencePanel');
+            panel.classList.toggle('hidden');
+        }
+        
+        function applyStyle(style) {
+            const input = document.getElementById('promptInput');
+            const styleText = stylePresets[style];
+            if (styleText && !input.value.includes(styleText)) {
+                input.value = input.value.trim() ? input.value + ', ' + styleText : styleText;
+                input.dispatchEvent(new Event('input'));
+            }
+        }
+        
+        async function generateImage() {
+            const prompt = document.getElementById('promptInput').value.trim();
             if (!prompt) {
-                alert('Silakan masukkan prompt!');
+                alert('Please enter a prompt');
                 return;
             }
             
-            addToHistory(prompt);
-            
             const btn = document.getElementById('generateBtn');
-            btn.disabled = true;
+            const originalContent = btn.innerHTML;
             btn.innerHTML = '<div class="loading mx-auto"></div>';
+            btn.disabled = true;
             
             try {
+                const width = document.getElementById('widthInput').value;
+                const height = document.getElementById('heightInput').value;
+                const seed = document.getElementById('seedInput').value;
+                const enhance = document.getElementById('enhanceCheck').checked;
+                const nologo = document.getElementById('nologoCheck').checked;
+                const nsfw = document.getElementById('nsfwToggle').checked;
+                const batchCount = parseInt(document.getElementById('batchCount').value) || 1;
+                const imageRef = document.getElementById('imageRefUrl').value.trim();
+                
+                addToHistory(prompt);
+                
                 for (let i = 0; i < batchCount; i++) {
-                    let fullPrompt = prompt;
-                    if (negativePrompt) {
-                        fullPrompt += ` --no ${negativePrompt}`;
-                    }
-                    
-                    // Build URL for non-kontext models
-                    let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`;
-                    url += `?model=${model}`;
+                    let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+                    url += `?model=${selectedModel}`;
                     url += `&width=${width}&height=${height}`;
                     if (seed) url += `&seed=${parseInt(seed) + i}`;
                     if (enhance) url += `&enhance=true`;
                     if (nologo) url += `&nologo=true`;
-                    if (privateMode) url += `&private=true`;
                     if (!nsfw) url += `&safe=true`;
-                    
-                    // For image-to-image with kontext
-                    if (imageUrl && model === 'kontext') {
-                        url += `&image=${encodeURIComponent(imageUrl)}`;
-                        if (apiToken) {
-                            url += `&token=${apiToken}`;
-                        }
+                    if (imageRef && selectedModel === 'kontext') {
+                        url += `&image=${encodeURIComponent(imageRef)}`;
                     }
                     
-                    const imageData = {
-                        url: url,
-                        prompt: prompt,
-                        model: model,
-                        stylePreset: stylePreset,
-                        seed: seed ? parseInt(seed) + i : null,
-                        timestamp: Date.now()
-                    };
-                    
-                    addImageToGrid(imageData);
+                    addResult(url, prompt, selectedModel, seed ? parseInt(seed) + i : null);
                     
                     if (i < batchCount - 1) {
                         await new Promise(resolve => setTimeout(resolve, 500));
@@ -546,148 +540,97 @@
                 }
                 
                 document.getElementById('promptInput').value = '';
-                document.getElementById('negativePrompt').value = '';
-                document.getElementById('stylePreset').value = '';
+                document.getElementById('promptInput').style.height = 'auto';
                 
             } catch (error) {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan: ' + error.message);
+                alert('Error generating image: ' + error.message);
             } finally {
+                btn.innerHTML = originalContent;
                 btn.disabled = false;
-                btn.textContent = 'Generate';
             }
-        });
+        }
         
-        function addImageToGrid(imageData) {
-            const grid = document.getElementById('imageGrid').firstElementChild;
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'relative bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden image-container shadow-lg';
-            imageContainer.dataset.imageData = JSON.stringify(imageData);
+        function addResult(imageUrl, prompt, model, seed) {
+            const resultsArea = document.getElementById('resultsArea');
             
-            // Style badge
-            if (imageData.stylePreset) {
-                const badge = document.createElement('div');
-                badge.className = 'style-badge';
-                badge.textContent = imageData.stylePreset.toUpperCase();
-                imageContainer.appendChild(badge);
-            }
-            
-            const img = document.createElement('img');
-            img.src = imageData.url;
-            img.alt = imageData.prompt;
-            img.className = 'w-full h-full object-cover image-preview aspect-square';
-            img.onclick = () => openModal(imageData.url, imageData.prompt);
-            
-            const promptOverlay = document.createElement('div');
-            promptOverlay.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-3 text-sm';
-            promptOverlay.textContent = imageData.prompt.substring(0, 60) + (imageData.prompt.length > 60 ? '...' : '');
-            
-            // Action buttons with REGENERATE and DELETE
-            const actionButtons = document.createElement('div');
-            actionButtons.className = 'absolute top-2 right-2 flex gap-2 action-buttons';
-            actionButtons.innerHTML = `
-                <button onclick='regenerateImage(event, this)' class="p-2 bg-purple-600 text-white rounded hover:bg-purple-700 shadow-lg" title="Regenerate">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                    </svg>
-                </button>
-                <button onclick='downloadImage(event, "${imageData.url}")' class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow-lg" title="Download">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                    </svg>
-                </button>
-                <button onclick='copyPrompt(event, "${imageData.prompt.replace(/'/g, "\\'")}' )' class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-lg" title="Copy">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                    </svg>
-                </button>
-                <button onclick='deleteImage(event, this)' class="p-2 bg-red-600 text-white rounded hover:bg-red-700 shadow-lg" title="Delete">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                    </svg>
-                </button>
+            const result = document.createElement('div');
+            result.className = 'image-result mb-6 p-6 bg-gray-50 dark:bg-[#2a2a2a] rounded-2xl';
+            result.innerHTML = `
+                <div class="flex items-start gap-4 mb-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        T
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">You</div>
+                        <div class="text-base">${prompt}</div>
+                    </div>
+                </div>
+                
+                <div class="ml-12">
+                    <div class="relative group">
+                        <img src="${imageUrl}" alt="${prompt}" class="w-full rounded-xl shadow-lg" />
+                        
+                        <div class="image-actions absolute top-3 right-3 flex gap-2">
+                            <button onclick="regenerateImage('${prompt}', '${model}', ${seed})" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Regenerate">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                </svg>
+                            </button>
+                            <button onclick="downloadImage('${imageUrl}')" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Download">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteResult(this)" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Delete">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="absolute bottom-3 left-3 px-3 py-1.5 bg-black bg-opacity-75 text-white rounded-lg text-xs">
+                            ${model.toUpperCase()} ${seed ? `· Seed: ${seed}` : ''}
+                        </div>
+                    </div>
+                </div>
             `;
             
-            imageContainer.appendChild(img);
-            imageContainer.appendChild(promptOverlay);
-            imageContainer.appendChild(actionButtons);
-            grid.insertBefore(imageContainer, grid.firstChild);
-            
-            generatedImages.push(imageData);
-            imageCount++;
-            updateImageCount();
+            resultsArea.insertBefore(result, resultsArea.firstChild);
         }
         
-        function regenerateImage(event, button) {
-            event.stopPropagation();
-            const container = button.closest('.image-container');
-            const imageData = JSON.parse(container.dataset.imageData);
+        function regenerateImage(prompt, model, seed) {
+            document.getElementById('promptInput').value = prompt;
+            if (seed) document.getElementById('seedInput').value = seed;
             
-            // Apply settings
-            document.getElementById('promptInput').value = imageData.prompt;
-            document.getElementById('modelSelect').value = imageData.model;
-            if (imageData.seed) document.getElementById('seedInput').value = imageData.seed;
-            if (imageData.stylePreset) document.getElementById('stylePreset').value = imageData.stylePreset;
-            
-            // Trigger generate
-            document.getElementById('generateBtn').click();
-        }
-        
-        function deleteImage(event, button) {
-            event.stopPropagation();
-            if (confirm('Hapus gambar ini?')) {
-                const container = button.closest('.image-container');
-                container.remove();
-                imageCount--;
-                updateImageCount();
+            // Select model
+            const modelCard = document.querySelector(`[data-model="${model}"]`);
+            if (modelCard) {
+                selectModel(model, modelCard);
             }
+            
+            generateImage();
         }
         
-        function openModal(imageUrl, prompt) {
-            document.getElementById('modalImage').src = imageUrl;
-            document.getElementById('modalPrompt').textContent = prompt;
-            document.getElementById('imageModal').classList.remove('hidden');
-            document.getElementById('imageModal').dataset.currentUrl = imageUrl;
-        }
-        
-        function closeModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-        }
-        
-        function downloadImage(event, url) {
-            event.stopPropagation();
+        function downloadImage(url) {
             const link = document.createElement('a');
             link.href = url;
             link.download = `taurus-ai-${Date.now()}.png`;
             link.click();
         }
         
-        function downloadModalImage(event) {
-            event.stopPropagation();
-            const url = document.getElementById('imageModal').dataset.currentUrl;
-            downloadImage(event, url);
-        }
-        
-        function copyPrompt(event, prompt) {
-            event.stopPropagation();
-            navigator.clipboard.writeText(prompt);
-            alert('Prompt disalin!');
-        }
-        
-        function updateImageCount() {
-            document.getElementById('imageCount').textContent = imageCount;
-        }
-        
-        function clearAllImages() {
-            if (confirm('Hapus semua gambar?')) {
-                document.getElementById('imageGrid').firstElementChild.innerHTML = '';
-                imageCount = 0;
-                generatedImages = [];
-                updateImageCount();
+        function deleteResult(button) {
+            if (confirm('Delete this result?')) {
+                button.closest('.image-result').remove();
             }
         }
         
-        function setAspectRatio(width, height) {
+        function clearAllResults() {
+            if (confirm('Clear all results?')) {
+                document.getElementById('resultsArea').innerHTML = '';
+            }
+        }
+        
+        function setSize(width, height) {
             document.getElementById('widthInput').value = width;
             document.getElementById('heightInput').value = height;
         }
@@ -697,7 +640,7 @@
         }
         
         function addToHistory(prompt) {
-            if (prompt && !promptHistory.includes(prompt)) {
+            if (!promptHistory.includes(prompt)) {
                 promptHistory.unshift(prompt);
                 if (promptHistory.length > 20) promptHistory.pop();
                 localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
@@ -708,10 +651,11 @@
         function updateHistoryList() {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
+            
             promptHistory.forEach(prompt => {
                 const item = document.createElement('div');
-                item.className = 'p-3 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700';
-                item.textContent = prompt.substring(0, 60) + (prompt.length > 60 ? '...' : '');
+                item.className = 'p-3 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
+                item.textContent = prompt.substring(0, 80) + (prompt.length > 80 ? '...' : '');
                 item.onclick = () => {
                     document.getElementById('promptInput').value = prompt;
                     toggleHistory();
@@ -720,27 +664,21 @@
             });
         }
         
-        function toggleHistory() {
-            document.getElementById('historySidebar').classList.toggle('hidden');
-            updateHistoryList();
-        }
-        
         function clearHistory() {
-            if (confirm('Hapus history?')) {
+            if (confirm('Clear all history?')) {
                 promptHistory = [];
                 localStorage.removeItem('promptHistory');
                 updateHistoryList();
             }
         }
         
+        // Enter to submit
         document.getElementById('promptInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                document.getElementById('generateBtn').click();
+                generateImage();
             }
         });
-        
-        updateHistoryList();
     </script>
 </body>
 </html>
