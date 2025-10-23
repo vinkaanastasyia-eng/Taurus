@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollinations Image Generator Pro</title>
+    <title>Taurus AI - Image Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Hide scrollbar */
@@ -16,15 +16,15 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-
+        
         .image-preview {
             cursor: pointer;
             transition: transform 0.2s;
         }
         .image-preview:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
-
+        
         .loading {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #3498db;
@@ -33,27 +33,34 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
-
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
+        
         .image-container:hover .action-buttons {
             opacity: 1;
         }
-
+        
         .action-buttons {
             opacity: 0;
             transition: opacity 0.2s;
         }
-
+        
         .url-preview-img {
             max-width: 200px;
             max-height: 200px;
             object-fit: contain;
             border-radius: 8px;
             border: 2px solid #3b82f6;
+        }
+        
+        /* Banana SVG Icon */
+        .banana-icon {
+            width: 32px;
+            height: 32px;
+            fill: currentColor;
         }
     </style>
     <script>
@@ -69,19 +76,27 @@
     <div class="flex h-screen">
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col p-6">
-            <!-- Header with Title and Stats -->
+            <!-- Header with Title, Icon and Stats -->
             <div class="mb-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold">Pollinations AI Generator</h1>
+                <div class="flex items-center gap-3">
+                    <!-- Banana Icon SVG (Black/White Silhouette) -->
+                    <svg class="banana-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.5 7c-.2-.6-.6-1-1.2-1.3-.8-.4-1.8-.4-2.6 0-1.7.7-3 2.3-4 4.2-.3.6-.6 1.2-.8 1.8-.1-.4-.3-.8-.5-1.2-1-2-2.4-3.7-4.2-4.4-.9-.4-1.9-.4-2.8 0-.6.3-1 .7-1.2 1.3-.3.8-.2 1.7.2 2.5.8 1.7 2.4 3 4.2 4 .6.3 1.2.6 1.8.8-.4.1-.8.3-1.2.5-2 1-3.7 2.4-4.4 4.2-.4.9-.4 1.9 0 2.8.3.6.7 1 1.3 1.2.8.3 1.7.2 2.5-.2 1.7-.8 3-2.4 4-4.2.3-.6.6-1.2.8-1.8.1.4.3.8.5 1.2 1 2 2.4 3.7 4.2 4.4.9.4 1.9.4 2.8 0 .6-.3 1-.7 1.2-1.3.3-.8.2-1.7-.2-2.5-.8-1.7-2.4-3-4.2-4-.6-.3-1.2-.6-1.8-.8.4-.1.8-.3 1.2-.5 2-1 3.7-2.4 4.4-4.2.4-.9.4-1.9 0-2.8z"/>
+                    </svg>
+                    <h1 class="text-2xl font-bold">Taurus AI</h1>
+                </div>
                 <div class="text-sm text-gray-500">
                     <span id="imageCount">0</span> gambar dibuat
                 </div>
             </div>
-
-            <!-- Generated Images Grid -->
-            <div id="imageGrid" class="flex-1 grid grid-cols-2 gap-4 mb-6 overflow-y-auto hide-scrollbar">
-                <!-- Images will be displayed here -->
+            
+            <!-- Generated Images Grid - IMPROVED LAYOUT -->
+            <div id="imageGrid" class="flex-1 overflow-y-auto hide-scrollbar mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- Images will be displayed here -->
+                </div>
             </div>
-
+            
             <!-- Prompt Input Area -->
             <div class="border border-gray-300 dark:border-gray-700 rounded-lg p-4">
                 <!-- Main Prompt -->
@@ -91,32 +106,47 @@
                     class="w-full bg-transparent border-none outline-none resize-none mb-2"
                     rows="2"
                 ></textarea>
-
-                <!-- Negative Prompt -->
-                <textarea 
-                    id="negativePrompt" 
-                    placeholder="Negative prompt (opsional): hal yang tidak ingin muncul..."
-                    class="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-500"
-                    rows="1"
-                ></textarea>
-
+                
+                <!-- Negative Prompt with Presets -->
+                <div class="mb-2">
+                    <div class="flex gap-2 mb-1">
+                        <select id="negativePreset" class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded" onchange="applyNegativePreset()">
+                            <option value="">Pilih Preset Negative</option>
+                            <option value="ugly, blurry, low quality, deformed">Quality Issues</option>
+                            <option value="nsfw, nude, violence, gore, blood">NSFW/Violence</option>
+                            <option value="watermark, text, logo, signature">Watermarks/Text</option>
+                            <option value="cartoon, anime, 3d render, painting">Non-Realistic</option>
+                            <option value="dark, night, shadow, dim lighting">Dark/Shadow</option>
+                            <option value="distorted, mutation, extra limbs, duplicate">Deformations</option>
+                        </select>
+                    </div>
+                    <textarea 
+                        id="negativePrompt" 
+                        placeholder="Negative prompt (opsional): hal yang tidak ingin muncul..."
+                        class="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-500"
+                        rows="1"
+                    ></textarea>
+                </div>
+                
                 <!-- Image Upload Area for Image-to-Image -->
                 <div class="mt-3 mb-3 flex items-center gap-3">
                     <label class="flex items-center gap-2 cursor-pointer px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <!-- Upload Icon (Silhouette) -->
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            <path d="M4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2"/>
                         </svg>
-                        <span id="uploadLabel">Upload Gambar</span>
+                        <span id="uploadLabel">Upload</span>
                         <input type="file" id="imageUpload" accept="image/*" class="hidden" />
                     </label>
                     <input 
                         type="text" 
                         id="imageUrl" 
-                        placeholder="Atau paste URL gambar di sini..."
+                        placeholder="Atau paste URL gambar untuk image-to-image..."
                         class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                     />
                 </div>
-
+                
                 <!-- URL Preview -->
                 <div id="urlPreviewContainer" class="hidden mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center gap-3">
                     <img id="urlPreviewImg" class="url-preview-img" />
@@ -124,16 +154,20 @@
                         Hapus
                     </button>
                 </div>
-
+                
                 <div class="flex justify-between items-center">
                     <div class="flex gap-2">
                         <div id="imagePreview" class="text-sm text-gray-500"></div>
                         <button 
                             id="historyBtn"
                             onclick="toggleHistory()"
-                            class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+                            class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-1"
                         >
-                            📜 History
+                            <!-- History Icon (Silhouette) -->
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/>
+                            </svg>
+                            History
                         </button>
                     </div>
                     <div class="flex gap-2">
@@ -156,11 +190,11 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Right Sidebar - Settings -->
         <div class="w-80 border-l border-gray-300 dark:border-gray-700 p-6 overflow-y-auto hide-scrollbar">
             <h2 class="text-xl font-bold mb-6">Pengaturan</h2>
-
+            
             <!-- API Token -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">API Token (Opsional)</label>
@@ -172,7 +206,7 @@
                 />
                 <p class="text-xs text-gray-500 mt-1">Untuk model Kontext</p>
             </div>
-
+            
             <!-- Model Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Model</label>
@@ -186,23 +220,23 @@
                     <option value="flux-anime">Flux Anime (Free)</option>
                     <option value="flux-3d">Flux 3D (Free)</option>
                     <option value="any-dark">Any Dark (Free)</option>
-                    <option value="kontext">Kontext (Premium - Image2Image)</option>
                 </select>
+                <p class="text-xs text-yellow-600 mt-1">⚠️ Kontext model memerlukan implementasi backend khusus untuk image-to-image</p>
             </div>
-
+            
             <!-- Aspect Ratio Presets -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Aspect Ratio</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setAspectRatio(1024, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">1:1</button>
-                    <button onclick="setAspectRatio(1280, 720)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">16:9</button>
-                    <button onclick="setAspectRatio(720, 1280)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">9:16</button>
-                    <button onclick="setAspectRatio(1024, 768)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">4:3</button>
-                    <button onclick="setAspectRatio(768, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">3:4</button>
-                    <button onclick="setAspectRatio(1920, 1080)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-gray-600">Full HD</button>
+                    <button onclick="setAspectRatio(1024, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">1:1</button>
+                    <button onclick="setAspectRatio(1280, 720)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">16:9</button>
+                    <button onclick="setAspectRatio(720, 1280)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">9:16</button>
+                    <button onclick="setAspectRatio(1024, 768)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">4:3</button>
+                    <button onclick="setAspectRatio(768, 1024)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">3:4</button>
+                    <button onclick="setAspectRatio(1920, 1080)" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs hover:bg-blue-500 hover:text-white">Full HD</button>
                 </div>
             </div>
-
+            
             <!-- Width -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Lebar (Width)</label>
@@ -216,7 +250,7 @@
                     class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                 />
             </div>
-
+            
             <!-- Height -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Tinggi (Height)</label>
@@ -230,7 +264,7 @@
                     class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                 />
             </div>
-
+            
             <!-- Seed -->
             <div class="mb-6">
                 <label class="block text-sm font-medium mb-2">Seed</label>
@@ -241,76 +275,96 @@
                         placeholder="Random"
                         class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none"
                     />
-                    <button onclick="randomSeed()" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">🎲</button>
+                    <button onclick="randomSeed()" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <!-- Dice Icon (Silhouette) -->
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm7 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-5 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
-
+            
             <!-- Options -->
             <div class="space-y-3">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="enhanceCheck" class="w-4 h-4" />
                     <span class="text-sm">Enhance Prompt</span>
                 </label>
-
+                
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="nologoCheck" checked class="w-4 h-4" />
                     <span class="text-sm">Tanpa Logo</span>
                 </label>
-
+                
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="privateCheck" class="w-4 h-4" />
                     <span class="text-sm">Private</span>
                 </label>
-
+                
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="safeCheck" class="w-4 h-4" />
                     <span class="text-sm">Safe Mode</span>
                 </label>
             </div>
-
+            
             <!-- Theme Toggle -->
             <div class="mt-8 pt-6 border-t border-gray-300 dark:border-gray-700">
                 <button 
                     id="themeToggle"
-                    class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                    class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
                 >
-                    🌙 Toggle Dark Mode
+                    <!-- Moon Icon (Silhouette) -->
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    Toggle Dark Mode
                 </button>
             </div>
-
+            
             <!-- Clear All -->
             <div class="mt-3">
                 <button 
                     onclick="clearAllImages()"
-                    class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center gap-2"
                 >
-                    🗑️ Clear All Images
+                    <!-- Trash Icon (Silhouette) -->
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                    Clear All Images
                 </button>
             </div>
         </div>
     </div>
-
+    
     <!-- Image Modal -->
-    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onclick="closeModal()">
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" onclick="closeModal()">
         <div class="max-w-5xl max-h-screen p-4 relative">
             <img id="modalImage" class="max-w-full max-h-full object-contain rounded-lg" />
             <div class="absolute top-6 right-6 flex gap-2">
-                <button onclick="downloadModalImage(event)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    💾 Download
+                <button onclick="downloadModalImage(event)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                    <!-- Download Icon -->
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    Download
                 </button>
-                <button onclick="closeModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                    ✕ Close
-                </button>
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">✕</button>
             </div>
             <div id="modalPrompt" class="absolute bottom-6 left-6 right-6 bg-black bg-opacity-75 text-white p-4 rounded-lg"></div>
         </div>
     </div>
-
+    
     <!-- History Sidebar -->
     <div id="historySidebar" class="hidden fixed top-0 right-0 w-80 h-screen bg-white dark:bg-[#131314] border-l border-gray-300 dark:border-gray-700 z-40 shadow-2xl">
         <div class="p-6 h-full flex flex-col">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">📜 History</h2>
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/>
+                    </svg>
+                    History
+                </h2>
                 <button onclick="toggleHistory()" class="text-2xl">&times;</button>
             </div>
             <div id="historyList" class="flex-1 overflow-y-auto space-y-2">
@@ -321,27 +375,36 @@
             </button>
         </div>
     </div>
-
+    
     <script>
         let uploadedImage = null;
         let imageCount = 0;
         let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
-        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-
+        
         // Initialize
         updateImageCount();
-
+        
         // Theme Toggle
         document.getElementById('themeToggle').addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         });
-
+        
         // Initialize theme
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
-
+        
+        // Apply Negative Prompt Preset
+        function applyNegativePreset() {
+            const preset = document.getElementById('negativePreset').value;
+            const negativeInput = document.getElementById('negativePrompt');
+            if (preset) {
+                const current = negativeInput.value.trim();
+                negativeInput.value = current ? current + ', ' + preset : preset;
+            }
+        }
+        
         // Image Upload Handler
         document.getElementById('imageUpload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -349,14 +412,14 @@
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     uploadedImage = event.target.result;
-                    document.getElementById('uploadLabel').textContent = file.name;
+                    document.getElementById('uploadLabel').textContent = 'Uploaded';
                     document.getElementById('imagePreview').innerHTML = 
-                        `<span class="text-green-600">✓ ${file.name}</span>`;
+                        `<span class="text-green-600">✓ ${file.name.substring(0, 15)}...</span>`;
                 };
                 reader.readAsDataURL(file);
             }
         });
-
+        
         // URL Input Handler with Preview
         document.getElementById('imageUrl').addEventListener('input', (e) => {
             const url = e.target.value.trim();
@@ -366,7 +429,7 @@
                 hideUrlPreview();
             }
         });
-
+        
         function showUrlPreview(url) {
             const container = document.getElementById('urlPreviewContainer');
             const img = document.getElementById('urlPreviewImg');
@@ -379,16 +442,16 @@
                 container.classList.remove('hidden');
             };
         }
-
+        
         function hideUrlPreview() {
             document.getElementById('urlPreviewContainer').classList.add('hidden');
         }
-
+        
         function clearUrlPreview() {
             document.getElementById('imageUrl').value = '';
             hideUrlPreview();
         }
-
+        
         // Generate Button Handler
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('promptInput').value.trim();
@@ -401,79 +464,64 @@
             const nologo = document.getElementById('nologoCheck').checked;
             const privateMode = document.getElementById('privateCheck').checked;
             const safe = document.getElementById('safeCheck').checked;
-            const apiToken = document.getElementById('apiToken').value.trim();
             const imageUrl = document.getElementById('imageUrl').value.trim();
             const batchCount = parseInt(document.getElementById('batchCount').value) || 1;
-
+            
             if (!prompt) {
                 alert('Silakan masukkan prompt terlebih dahulu!');
                 return;
             }
-
+            
             // Save to history
             addToHistory(prompt);
-
+            
             // Show loading
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
             btn.innerHTML = '<div class="loading mx-auto"></div>';
-
+            
             try {
-                let imageSource = uploadedImage || imageUrl;
-
                 // Generate multiple images
                 for (let i = 0; i < batchCount; i++) {
                     let url;
                     let fullPrompt = prompt;
-
+                    
+                    // Add negative prompt properly
                     if (negativePrompt) {
-                        fullPrompt += ` [negative: ${negativePrompt}]`;
+                        fullPrompt += ` --no ${negativePrompt}`;
                     }
-
-                    if (model === 'kontext' && imageSource) {
-                        if (!apiToken) {
-                            alert('Model Kontext memerlukan API Token. Dapatkan di https://auth.pollinations.ai');
-                            throw new Error('API Token required');
-                        }
-
-                        url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`;
-                        url += `?model=${model}`;
-                        url += `&width=${width}&height=${height}`;
-                        if (seed) url += `&seed=${parseInt(seed) + i}`;
-                        if (enhance) url += `&enhance=true`;
-                        if (nologo) url += `&nologo=true`;
-                        if (privateMode) url += `&private=true`;
-                        if (safe) url += `&safe=true`;
-
-                    } else {
-                        url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`;
-                        url += `?model=${model}`;
-                        url += `&width=${width}&height=${height}`;
-                        if (seed) url += `&seed=${parseInt(seed) + i}`;
-                        if (enhance) url += `&enhance=true`;
-                        if (nologo) url += `&nologo=true`;
-                        if (privateMode) url += `&private=true`;
-                        if (safe) url += `&safe=true`;
-                    }
-
+                    
+                    // Standard text-to-image (Kontext removed from frontend - requires backend)
+                    url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`;
+                    url += `?model=${model}`;
+                    url += `&width=${width}&height=${height}`;
+                    if (seed) url += `&seed=${parseInt(seed) + i}`;
+                    if (enhance) url += `&enhance=true`;
+                    if (nologo) url += `&nologo=true`;
+                    if (privateMode) url += `&private=true`;
+                    if (safe) url += `&safe=true`;
+                    
+                    // Note: For true image-to-image with reference, you need backend implementation
+                    // This is a limitation of browser-based implementation
+                    
                     addImageToGrid(url, prompt);
-
+                    
                     // Small delay between batch generations
                     if (i < batchCount - 1) {
                         await new Promise(resolve => setTimeout(resolve, 500));
                     }
                 }
-
+                
                 // Clear inputs
                 document.getElementById('promptInput').value = '';
                 document.getElementById('negativePrompt').value = '';
                 uploadedImage = null;
                 document.getElementById('imageUpload').value = '';
                 document.getElementById('imageUrl').value = '';
-                document.getElementById('uploadLabel').textContent = 'Upload Gambar';
+                document.getElementById('uploadLabel').textContent = 'Upload';
                 document.getElementById('imagePreview').innerHTML = '';
                 hideUrlPreview();
-
+                
             } catch (error) {
                 console.error('Error:', error);
                 alert('Terjadi kesalahan saat generate gambar. Silakan coba lagi.');
@@ -482,40 +530,47 @@
                 btn.textContent = 'Generate';
             }
         });
-
+        
         function addImageToGrid(imageUrl, prompt) {
-            const grid = document.getElementById('imageGrid');
+            const grid = document.getElementById('imageGrid').firstElementChild;
             const imageContainer = document.createElement('div');
-            imageContainer.className = 'relative aspect-square bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden image-container';
-
+            imageContainer.className = 'relative bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden image-container shadow-lg';
+            
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = prompt;
-            img.className = 'w-full h-full object-cover image-preview';
+            img.className = 'w-full h-full object-cover image-preview aspect-square';
             img.onclick = () => openModal(imageUrl, prompt);
-
+            
             const promptOverlay = document.createElement('div');
-            promptOverlay.className = 'absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 text-sm';
-            promptOverlay.textContent = prompt.substring(0, 50) + (prompt.length > 50 ? '...' : '');
-
-            // Action buttons
+            promptOverlay.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-3 text-sm';
+            promptOverlay.textContent = prompt.substring(0, 60) + (prompt.length > 60 ? '...' : '');
+            
+            // Action buttons (Silhouette icons)
             const actionButtons = document.createElement('div');
             actionButtons.className = 'absolute top-2 right-2 flex gap-2 action-buttons';
             actionButtons.innerHTML = `
-                <button onclick="downloadImage(event, '${imageUrl}', '${prompt.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">💾</button>
-                <button onclick="copyPrompt(event, '${prompt.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">📋</button>
-                <button onclick="toggleFavorite(event, '${imageUrl}', '${prompt.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700">⭐</button>
+                <button onclick="downloadImage(event, '${imageUrl}', '${prompt.replace(/'/g, "\\\\'")}')" class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow-lg" title="Download">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                </button>
+                <button onclick="copyPrompt(event, '${prompt.replace(/'/g, "\\\\'")}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-lg" title="Copy Prompt">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                </button>
             `;
-
+            
             imageContainer.appendChild(img);
             imageContainer.appendChild(promptOverlay);
             imageContainer.appendChild(actionButtons);
             grid.insertBefore(imageContainer, grid.firstChild);
-
+            
             imageCount++;
             updateImageCount();
         }
-
+        
         function openModal(imageUrl, prompt) {
             document.getElementById('modalImage').src = imageUrl;
             document.getElementById('modalPrompt').textContent = prompt;
@@ -523,60 +578,53 @@
             document.getElementById('imageModal').dataset.currentUrl = imageUrl;
             document.getElementById('imageModal').dataset.currentPrompt = prompt;
         }
-
+        
         function closeModal() {
             document.getElementById('imageModal').classList.add('hidden');
         }
-
+        
         function downloadImage(event, url, prompt) {
             event.stopPropagation();
             const link = document.createElement('a');
             link.href = url;
-            link.download = `pollinations-${Date.now()}.png`;
+            link.download = `taurus-ai-${Date.now()}.png`;
             link.click();
         }
-
+        
         function downloadModalImage(event) {
             event.stopPropagation();
             const url = document.getElementById('imageModal').dataset.currentUrl;
-            const prompt = document.getElementById('imageModal').dataset.currentPrompt;
-            downloadImage(event, url, prompt);
+            downloadImage(event, url, 'image');
         }
-
+        
         function copyPrompt(event, prompt) {
             event.stopPropagation();
             navigator.clipboard.writeText(prompt);
             alert('Prompt disalin ke clipboard!');
         }
-
-        function toggleFavorite(event, url, prompt) {
-            event.stopPropagation();
-            // Implementation for favorites
-            alert('Fitur favorite - Coming soon!');
-        }
-
+        
         function updateImageCount() {
             document.getElementById('imageCount').textContent = imageCount;
         }
-
+        
         function clearAllImages() {
             if (confirm('Hapus semua gambar? Tindakan ini tidak dapat dibatalkan.')) {
-                document.getElementById('imageGrid').innerHTML = '';
+                document.getElementById('imageGrid').firstElementChild.innerHTML = '';
                 imageCount = 0;
                 updateImageCount();
             }
         }
-
+        
         // Aspect Ratio Functions
         function setAspectRatio(width, height) {
             document.getElementById('widthInput').value = width;
             document.getElementById('heightInput').value = height;
         }
-
+        
         function randomSeed() {
             document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
         }
-
+        
         // History Functions
         function addToHistory(prompt) {
             if (prompt && !promptHistory.includes(prompt)) {
@@ -586,7 +634,7 @@
                 updateHistoryList();
             }
         }
-
+        
         function updateHistoryList() {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
@@ -601,13 +649,13 @@
                 list.appendChild(item);
             });
         }
-
+        
         function toggleHistory() {
             const sidebar = document.getElementById('historySidebar');
             sidebar.classList.toggle('hidden');
             updateHistoryList();
         }
-
+        
         function clearHistory() {
             if (confirm('Hapus semua history?')) {
                 promptHistory = [];
@@ -615,7 +663,7 @@
                 updateHistoryList();
             }
         }
-
+        
         // Allow Enter to generate
         document.getElementById('promptInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -623,7 +671,7 @@
                 document.getElementById('generateBtn').click();
             }
         });
-
+        
         // Initialize history
         updateHistoryList();
     </script>
