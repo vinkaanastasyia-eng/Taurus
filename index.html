@@ -17,10 +17,11 @@
         .image-actions { opacity: 0; transition: opacity 0.2s; }
         .image-result:hover .image-actions { opacity: 1; }
         .model-dropdown { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-        .model-dropdown.open { max-height: 500px; }
+        .model-dropdown.open { max-height: 500px; overflow-y: auto; }
         .model-option { transition: background-color 0.15s; }
-        .model-option:hover { background-color: rgba(0,0,0,0.05); }
+        .model-option:hover, .model-option:focus { background-color: rgba(0,0,0,0.05); outline: none; }
         .model-option.selected { background-color: #e8f0fe; }
+        .model-option.focused { background-color: rgba(59, 130, 246, 0.1); }
         .banana-icon { width: 28px; height: 28px; }
     </style>
     <script>
@@ -50,83 +51,98 @@
                 </div>
 
                 <div class="relative">
-                    <button onclick="toggleModelDropdown()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
-                        <span id="selectedModelIcon">⚡</span>
+                    <button 
+                        id="modelDropdownButton"
+                        onclick="toggleModelDropdown()" 
+                        onkeydown="handleDropdownButtonKeydown(event)"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-labelledby="modelDropdownLabel"
+                        class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                        <span id="selectedModelIcon" aria-hidden="true">⚡</span>
                         <span id="selectedModelName" class="font-medium text-sm">Flux</span>
-                        <svg class="w-4 h-4" id="dropdownArrow" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                        <svg class="w-4 h-4" id="dropdownArrow" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
                     </button>
+                    <span id="modelDropdownLabel" class="sr-only">Select AI Model</span>
 
-                    <div id="modelDropdown" class="model-dropdown absolute top-full mt-2 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                    <div 
+                        id="modelDropdown" 
+                        role="listbox"
+                        aria-labelledby="modelDropdownLabel"
+                        tabindex="-1"
+                        class="model-dropdown absolute top-full mt-2 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                    >
                         <div class="p-2">
-                            <div class="model-option selected px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux', '⚡', 'Flux', this)">
+                            <div role="option" aria-selected="true" tabindex="0" data-model="flux" data-icon="⚡" data-name="Flux" class="model-option selected px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">⚡</span>
+                                    <span class="text-xl" aria-hidden="true">⚡</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux</div>
                                         <div class="text-xs text-gray-500">Balanced</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('turbo', '🚀', 'Turbo', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="turbo" data-icon="🚀" data-name="Turbo" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">🚀</span>
+                                    <span class="text-xl" aria-hidden="true">🚀</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Turbo</div>
                                         <div class="text-xs text-gray-500">Fast</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-realism', '📷', 'Realism', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="flux-realism" data-icon="📷" data-name="Realism" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">📷</span>
+                                    <span class="text-xl" aria-hidden="true">📷</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux Realism</div>
                                         <div class="text-xs text-gray-500">Photo-realistic</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-anime', '🎌', 'Anime', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="flux-anime" data-icon="🎌" data-name="Anime" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">🎌</span>
+                                    <span class="text-xl" aria-hidden="true">🎌</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux Anime</div>
                                         <div class="text-xs text-gray-500">Animation</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('flux-3d', '🎮', '3D', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="flux-3d" data-icon="🎮" data-name="3D" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">🎮</span>
+                                    <span class="text-xl" aria-hidden="true">🎮</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Flux 3D</div>
                                         <div class="text-xs text-gray-500">3D Graphics</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('any-dark', '🌙', 'Dark', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="any-dark" data-icon="🌙" data-name="Dark" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">🌙</span>
+                                    <span class="text-xl" aria-hidden="true">🌙</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Any Dark</div>
                                         <div class="text-xs text-gray-500">Dark Theme</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
                             <div class="border-t border-gray-200 my-2"></div>
-                            <div class="model-option px-3 py-3 rounded-lg cursor-pointer" onclick="selectModel('kontext', '🎨', 'Kontext', this)">
+                            <div role="option" aria-selected="false" tabindex="-1" data-model="kontext" data-icon="🎨" data-name="Kontext" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-xl">🎨</span>
+                                    <span class="text-xl" aria-hidden="true">🎨</span>
                                     <div class="flex-1">
                                         <div class="font-medium text-sm">Kontext</div>
                                         <div class="text-xs text-gray-500">Image2Image</div>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                 </div>
                             </div>
                         </div>
@@ -301,6 +317,7 @@
         let selectedModelIcon = '⚡';
         let selectedModelName = 'Flux';
         let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
+        let currentFocusedIndex = -1;
 
         const stylePresets = {
             'realistic': 'photorealistic, highly detailed, professional photography, 8k uhd',
@@ -319,14 +336,150 @@
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
 
+        // Keyboard-accessible dropdown functions
         function toggleModelDropdown() {
             const dropdown = document.getElementById('modelDropdown');
+            const button = document.getElementById('modelDropdownButton');
             const arrow = document.getElementById('dropdownArrow');
-            dropdown.classList.toggle('open');
-            arrow.style.transform = dropdown.classList.contains('open') ? 'rotate(180deg)' : '';
+            const isOpen = dropdown.classList.contains('open');
+
+            if (!isOpen) {
+                dropdown.classList.add('open');
+                button.setAttribute('aria-expanded', 'true');
+                arrow.style.transform = 'rotate(180deg)';
+                
+                // Focus first selected option or first option
+                const selectedOption = dropdown.querySelector('[aria-selected="true"]');
+                const firstOption = dropdown.querySelector('[role="option"]');
+                const optionToFocus = selectedOption || firstOption;
+                
+                if (optionToFocus) {
+                    setTimeout(() => {
+                        optionToFocus.focus();
+                        currentFocusedIndex = Array.from(dropdown.querySelectorAll('[role="option"]')).indexOf(optionToFocus);
+                    }, 100);
+                }
+            } else {
+                closeDropdown();
+            }
         }
 
-        function selectModel(model, icon, name, element) {
+        function closeDropdown() {
+            const dropdown = document.getElementById('modelDropdown');
+            const button = document.getElementById('modelDropdownButton');
+            const arrow = document.getElementById('dropdownArrow');
+            
+            dropdown.classList.remove('open');
+            button.setAttribute('aria-expanded', 'false');
+            arrow.style.transform = '';
+            currentFocusedIndex = -1;
+            
+            // Remove focused class from all options
+            dropdown.querySelectorAll('.model-option').forEach(opt => {
+                opt.classList.remove('focused');
+            });
+        }
+
+        function handleDropdownButtonKeydown(event) {
+            const dropdown = document.getElementById('modelDropdown');
+            const isOpen = dropdown.classList.contains('open');
+
+            switch(event.key) {
+                case 'Enter':
+                case ' ':
+                case 'ArrowDown':
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (!isOpen) {
+                        toggleModelDropdown();
+                    }
+                    break;
+                case 'Escape':
+                    if (isOpen) {
+                        event.preventDefault();
+                        closeDropdown();
+                        document.getElementById('modelDropdownButton').focus();
+                    }
+                    break;
+            }
+        }
+
+        function handleOptionKeydown(event) {
+            const dropdown = document.getElementById('modelDropdown');
+            const options = Array.from(dropdown.querySelectorAll('[role="option"]'));
+            const currentOption = event.target.closest('[role="option"]');
+            currentFocusedIndex = options.indexOf(currentOption);
+
+            switch(event.key) {
+                case 'Enter':
+                case ' ':
+                    event.preventDefault();
+                    selectModelFromElement(currentOption);
+                    closeDropdown();
+                    document.getElementById('modelDropdownButton').focus();
+                    break;
+                    
+                case 'ArrowDown':
+                    event.preventDefault();
+                    currentFocusedIndex = (currentFocusedIndex + 1) % options.length;
+                    focusOption(options[currentFocusedIndex]);
+                    break;
+                    
+                case 'ArrowUp':
+                    event.preventDefault();
+                    currentFocusedIndex = currentFocusedIndex <= 0 ? options.length - 1 : currentFocusedIndex - 1;
+                    focusOption(options[currentFocusedIndex]);
+                    break;
+                    
+                case 'Home':
+                    event.preventDefault();
+                    currentFocusedIndex = 0;
+                    focusOption(options[0]);
+                    break;
+                    
+                case 'End':
+                    event.preventDefault();
+                    currentFocusedIndex = options.length - 1;
+                    focusOption(options[currentFocusedIndex]);
+                    break;
+                    
+                case 'Escape':
+                    event.preventDefault();
+                    closeDropdown();
+                    document.getElementById('modelDropdownButton').focus();
+                    break;
+                    
+                case 'Tab':
+                    closeDropdown();
+                    break;
+            }
+        }
+
+        function focusOption(option) {
+            const dropdown = document.getElementById('modelDropdown');
+            
+            // Remove focused class from all options
+            dropdown.querySelectorAll('.model-option').forEach(opt => {
+                opt.classList.remove('focused');
+            });
+            
+            // Add focused class and focus the option
+            option.classList.add('focused');
+            option.focus();
+            
+            // Scroll into view if needed
+            option.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function selectModelFromClick(element) {
+            selectModelFromElement(element);
+        }
+
+        function selectModelFromElement(element) {
+            const model = element.dataset.model;
+            const icon = element.dataset.icon;
+            const name = element.dataset.name;
+
             selectedModel = model;
             selectedModelIcon = icon;
             selectedModelName = name;
@@ -334,16 +487,34 @@
             document.getElementById('selectedModelIcon').textContent = icon;
             document.getElementById('selectedModelName').textContent = name;
 
-            document.querySelectorAll('.model-option').forEach(opt => {
+            // Update aria-selected attributes
+            const dropdown = document.getElementById('modelDropdown');
+            dropdown.querySelectorAll('[role="option"]').forEach(opt => {
+                opt.setAttribute('aria-selected', 'false');
                 opt.classList.remove('selected');
                 const check = opt.querySelector('.model-check');
                 if (check) check.classList.add('hidden');
             });
 
+            element.setAttribute('aria-selected', 'true');
             element.classList.add('selected');
-            element.querySelector('.model-check').classList.remove('hidden');
-            toggleModelDropdown();
+            const check = element.querySelector('.model-check');
+            if (check) check.classList.remove('hidden');
+
+            closeDropdown();
         }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('modelDropdown');
+            const button = document.getElementById('modelDropdownButton');
+            
+            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+                if (dropdown.classList.contains('open')) {
+                    closeDropdown();
+                }
+            }
+        });
 
         async function generateImage() {
             const prompt = document.getElementById('promptInput').value.trim();
@@ -388,16 +559,16 @@
                         <div class="ml-12 relative group">
                             <img src="${url}" alt="${prompt}" class="w-full rounded-xl shadow-lg" loading="lazy"/>
                             <div class="image-actions absolute top-3 right-3 flex gap-2">
-                                <button onclick='regenerateImage("${prompt.replace(/"/g, '&quot;')}", "${selectedModel}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                <button onclick='regenerateImage("${prompt.replace(/"/g, '&quot;')}", "${selectedModel}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Regenerate image">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                                 </button>
-                                <button onclick='downloadImage("${url}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                <button onclick='downloadImage("${url}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Download image">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                                 </button>
-                                <button onclick='copyPrompt("${prompt.replace(/"/g, '&quot;')}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                <button onclick='copyPrompt("${prompt.replace(/"/g, '&quot;')}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Copy prompt">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                                 </button>
-                                <button onclick='deleteResult(this)' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100">
+                                <button onclick='deleteResult(this)' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Delete result">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                 </button>
                             </div>
@@ -419,8 +590,8 @@
 
         function regenerateImage(prompt, model) {
             document.getElementById('promptInput').value = prompt;
-            const option = Array.from(document.querySelectorAll('.model-option')).find(opt => opt.textContent.includes(model));
-            if (option) option.click();
+            const option = document.querySelector(`[data-model="${model}"]`);
+            if (option) selectModelFromElement(option);
             generateImage();
         }
 
@@ -524,13 +695,6 @@
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 generateImage();
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('modelDropdown');
-            if (!e.target.closest('button[onclick="toggleModelDropdown()"]') && !e.target.closest('#modelDropdown')) {
-                if (dropdown.classList.contains('open')) toggleModelDropdown();
             }
         });
     </script>
