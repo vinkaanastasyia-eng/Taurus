@@ -10,59 +10,39 @@
     body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
     .loading { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display:inline-block; vertical-align:middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    /* Layout */
     .left-col { min-width: 320px; max-width: 380px; }
     main { min-width: 0; } /* allow flex shrink */
-
-    /* Model dropdown */
     .model-option { transition: background-color .12s; }
     .model-option:hover { background-color: rgba(0,0,0,0.04); }
-
-    /* Compact result cards - takes less space */
     .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-    .image-card { transition: transform .12s, box-shadow .12s; }
+    .image-card { transition: transform .12s, box-shadow .12s; position:relative; overflow:hidden; }
     .image-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
-
     .image-thumb { width:100%; height:120px; object-fit:cover; border-radius:8px; display:block; }
-
-    /* Preview modal */
-    .modal-backdrop { background: rgba(0,0,0,.6); }
-    .status-pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; display:inline-flex; align-items:center; gap:6px; }
-    .status-rendering { background: #fff7ed; color:#92400e; border:1px solid #fde3bf; }
-    .status-done { background: #ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
-    .status-error { background: #fff1f2; color:#9f1239; border:1px solid #fecaca; }
-
-    /* small UI */
-    .small-txt { font-size: 12px; color: #4b5563; }
-
-    /* silhouette icons container */
+    .nsfw-overlay { position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6)); display:flex; align-items:center; justify-content:center; color:white; font-weight:600; gap:8px; cursor:pointer; }
     .silhouette { width: 28px; height: 28px; display:inline-block; vertical-align:middle; }
-
-    /* image reference preview */
     .image-preview-small { width:80px; height:56px; object-fit:cover; border-radius:6px; border:1px solid #e5e7eb; }
-
-    /* helpers */
     .muted { color:#6b7280; }
+    /* right sidebar */
+    aside.right { width: 320px; border-left: 1px solid #e5e7eb; background: #fff; padding: 16px; position: fixed; right: 0; top: 0; bottom: 0; overflow:auto; }
+    .preset-btn { padding:6px 8px; border-radius:6px; background:#f3f4f6; font-size:13px; cursor:pointer; }
+    .preset-btn:hover { background:#e5e7eb; }
+    .tag { display:inline-block; padding:4px 8px; background:#f8fafc; border-radius:999px; margin:3px; font-size:12px; cursor:pointer; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <div class="min-h-screen flex">
-    <!-- Left sidebar -->
+    <!-- Left: existing left sidebar (KEEP as-is) -->
     <aside class="left-col bg-white border-r border-gray-200 p-4 flex flex-col gap-4">
-      <!-- Logo + title (silhouette logo) -->
+      <!-- Logo + title -->
       <div class="flex items-center gap-3">
-        <!-- Unique silhouette logo (simple leaf/burst) -->
-        <svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 2c2 2 6 3 8 5s3 6 1 8-6 3-8 5-6-3-8-5-1-6 1-8 6-3 8-5z" fill="#111827"/>
-        </svg>
+        <svg class="silhouette" viewBox="0 0 24 24" fill="none"><path d="M12 2c2 2 6 3 8 5s3 6 1 8-6 3-8 5-6-3-8-5-1-6 1-8 6-3 8-5z" fill="#111827"/></svg>
         <div>
           <div class="text-lg font-semibold">Taurus AI</div>
-          <div class="small-txt">Image generation • compact UI</div>
+          <div class="text-xs muted">Image generation · compact UI</div>
         </div>
       </div>
 
-      <!-- Model selector -->
+      <!-- Model selector (unchanged behavior, dynamic fill) -->
       <div class="border-t border-gray-100 pt-3">
         <label class="text-xs text-gray-600">Model</label>
         <div class="relative mt-2">
@@ -73,11 +53,9 @@
             </div>
             <svg class="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
           </button>
-
           <div id="modelDropdown" class="model-dropdown mt-2 absolute left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-sm z-30 hidden" role="listbox">
             <div class="p-2" id="modelDropdownInner"></div>
           </div>
-
           <div id="modelAuthWarning" class="mt-2 text-xs text-red-600 hidden"></div>
         </div>
       </div>
@@ -88,77 +66,74 @@
         <textarea id="promptInput" rows="3" class="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50" placeholder="Describe the image you want (keeps content while generating)"></textarea>
       </div>
 
-      <!-- Aspect ratio + size -->
+      <!-- Aspect & Size -->
       <div class="border-t border-gray-100 pt-3">
         <div class="flex items-center justify-between">
           <label class="text-xs text-gray-600">Aspect & Size</label>
           <div class="small-txt" id="detectedAspectLabel">Auto</div>
         </div>
-
         <div class="mt-2 flex gap-2">
-          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(1,1)">1:1</button>
-          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(16,9)">16:9</button>
-          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(9,16)">9:16</button>
-          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(3,2)">3:2</button>
-          <button id="useImgAspectBtn" class="px-2 py-1 text-xs bg-white border rounded hidden">Use ref aspect</button>
+          <button class="preset-btn" onclick="setPresetAspect(1,1)">1:1</button>
+          <button class="preset-btn" onclick="setPresetAspect(16,9)">16:9</button>
+          <button class="preset-btn" onclick="setPresetAspect(9,16)">9:16</button>
+          <button class="preset-btn" onclick="setPresetAspect(3,2)">3:2</button>
         </div>
-
         <div class="mt-2 grid grid-cols-2 gap-2">
           <input id="widthInput" type="number" value="1024" min="128" max="4096" step="1" class="px-2 py-2 rounded-lg border border-gray-200 text-sm" placeholder="Width">
           <input id="heightInput" type="number" value="1024" min="128" max="4096" step="1" class="px-2 py-2 rounded-lg border border-gray-200 text-sm" placeholder="Height">
+        </div>
+        <div class="mt-2">
+          <button id="useImgAspectBtn" class="preset-btn hidden">Use ref aspect</button>
         </div>
       </div>
 
       <!-- Image reference (only visible when kontext selected) -->
       <div class="border-t border-gray-100 pt-3" id="imageRefSection" style="display:none;">
         <label class="text-xs text-gray-600">Image reference (paste URL)</label>
-
         <div class="mt-2 flex gap-2 items-center">
           <input id="imageRefUrl" type="url" placeholder="Paste image URL (img2img)" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
           <button id="addImageRefBtn" class="px-2 py-2 bg-blue-600 text-white rounded-lg hidden">Add</button>
         </div>
-
         <div id="imageRefPreviewWrap" class="mt-2 hidden">
           <div class="flex items-center gap-2">
             <img id="imageRefPreview" src="" alt="preview" class="image-preview-small" />
-            <div class="text-xs text-gray-500">
+            <div class="text-xs muted">
               <div id="imageRefInfo">Reference preview</div>
-              <div class="muted" id="imageRefSize"></div>
+              <div id="imageRefSize"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Seed + controls -->
+      <!-- Seed + watermark/nologo (kept) -->
       <div class="border-t border-gray-100 pt-3">
-        <label class="text-xs text-gray-600">Seed</label>
-        <div class="mt-2 flex items-center gap-2">
-          <input id="seedInput" type="number" placeholder="Random" class="flex-1 px-2 py-2 rounded-lg border border-gray-200 text-sm" />
+        <label class="text-xs text-gray-600">Seed & Controls</label>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="seedInput" type="number" placeholder="Optional seed" class="px-2 py-2 rounded-lg border border-gray-200 text-sm" />
           <button id="randomSeedBtn" class="px-2 py-2 bg-gray-100 rounded">🎲</button>
         </div>
         <div class="mt-2 flex items-center gap-2 small-txt">
           <label class="flex items-center gap-2"><input id="lockSeed" type="checkbox" /> Lock seed</label>
-          <div class="ml-auto muted">If locked, same seed used across batches</div>
+          <label class="flex items-center gap-2 ml-auto"><input id="nologoCheck" type="checkbox" checked /> Remove watermark</label>
+        </div>
+
+        <div class="mt-2 flex items-center gap-2">
+          <label class="flex items-center gap-2"><input id="nsfwToggle" type="checkbox" /> Allow NSFW</label>
+          <div class="muted ml-auto">If enabled, thumbnails will be hidden until revealed</div>
         </div>
       </div>
 
-      <!-- Generate -->
       <div class="mt-4">
         <div class="flex gap-2">
           <button id="generateBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg">Generate</button>
           <button id="clearAllBtn" class="px-3 py-2 bg-gray-100 rounded-lg">Clear</button>
         </div>
-        <div class="mt-2 text-xs text-gray-500">Tip: paste a public image URL and click Add when using Kontext.</div>
       </div>
 
-      <div class="mt-auto text-xs text-gray-400">
-        <div>Version: local</div>
-        <div class="mt-2">You can store session key in Settings & test key validity.</div>
-      </div>
     </aside>
 
     <!-- Main content -->
-    <main class="flex-1 p-6 flex flex-col gap-6">
+    <main class="flex-1 p-6 flex flex-col gap-6" style="margin-right:340px;">
       <header class="flex items-center justify-between">
         <div>
           <h2 class="text-lg font-semibold">Generated images</h2>
@@ -171,6 +146,82 @@
         <div id="resultsArea" class="results-grid scrollable p-2 h-full" style="height: calc(100% - 8px);"></div>
       </section>
     </main>
+
+    <!-- Right sidebar: options (always visible) -->
+    <aside class="right" id="rightSidebar">
+      <h3 class="text-sm font-semibold mb-2">Advanced Options</h3>
+
+      <div class="mb-3">
+        <label class="text-xs text-gray-600">Negative Prompt Presets</label>
+        <div class="mt-2 grid gap-2">
+          <!-- examples; you can expand these lists -->
+          <div>
+            <span class="tag" data-val="lowres, bad anatomy, text" onclick="applyNegativePreset(this)">Common junk</span>
+            <span class="tag" data-val="deformed, extra limbs, watermark" onclick="applyNegativePreset(this)">Artifacts</span>
+            <span class="tag" data-val="blurry, low quality, out of focus" onclick="applyNegativePreset(this)">Quality</span>
+            <span class="tag" data-val="photorealistic, face detected" onclick="applyNegativePreset(this)">Faces (avoid)</span>
+          </div>
+        </div>
+        <div class="mt-2">
+          <button class="preset-btn" onclick="clearNegativePrompt()">Clear negative</button>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-xs text-gray-600">Art Style (click to append)</label>
+        <div class="mt-2">
+          <div id="styleTags" style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" data-val="photorealistic" onclick="appendTrait(this)">Photorealistic</span>
+            <span class="tag" data-val="oil painting" onclick="appendTrait(this)">Oil painting</span>
+            <span class="tag" data-val="watercolor" onclick="appendTrait(this)">Watercolor</span>
+            <span class="tag" data-val="anime" onclick="appendTrait(this)">Anime</span>
+            <span class="tag" data-val="cyberpunk" onclick="appendTrait(this)">Cyberpunk</span>
+            <span class="tag" data-val="studio lighting" onclick="appendTrait(this)">Studio lighting</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-xs text-gray-600">Pose</label>
+        <div class="mt-2" id="poseTags">
+          <span class="tag" data-val="standing" onclick="appendTrait(this)">Standing</span>
+          <span class="tag" data-val="sitting" onclick="appendTrait(this)">Sitting</span>
+          <span class="tag" data-val="running" onclick="appendTrait(this)">Running</span>
+          <span class="tag" data-val="close-up portrait" onclick="appendTrait(this)">Close-up</span>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-xs text-gray-600">Shot / View</label>
+        <div class="mt-2">
+          <span class="tag" data-val="wide shot" onclick="appendTrait(this)">Wide</span>
+          <span class="tag" data-val="medium shot" onclick="appendTrait(this)">Medium</span>
+          <span class="tag" data-val="close up" onclick="appendTrait(this)">Close up</span>
+          <span class="tag" data-val="birds-eye view" onclick="appendTrait(this)">Bird's-eye</span>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-xs text-gray-600">CFG / Scale / Steps / Sampler</label>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="cfgScale" type="number" step="0.1" value="7.0" class="px-2 py-2 rounded border border-gray-200 text-sm" placeholder="CFG / Scale">
+          <input id="steps" type="number" step="1" value="28" class="px-2 py-2 rounded border border-gray-200 text-sm" placeholder="Steps">
+        </div>
+        <div class="mt-2">
+          <select id="sampler" class="w-full px-2 py-2 rounded border border-gray-200 text-sm">
+            <option value="k_lms">k_lms</option>
+            <option value="ddim">ddim</option>
+            <option value="plms">plms</option>
+            <option value="k_euler">k_euler</option>
+            <option value="k_euler_ancestral">k_euler_ancestral</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="text-xs text-gray-500">
+        These options append to the prompt / request automatically. Negative presets apply instantly to the negative prompt parameter.
+      </div>
+    </aside>
   </div>
 
   <!-- Preview Modal -->
@@ -207,9 +258,7 @@
   </div>
 
 <script>
-/* -------------------------
-   Helpers & UI state
--------------------------*/
+/* Helpers */
 function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
   Object.entries(props).forEach(([k,v]) => {
@@ -221,17 +270,12 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 function fmtTime(ts = Date.now()){ return new Date(ts).toLocaleString(); }
-function smallText(s){ return el('div', { class: 'small-txt' }, s); }
 
-/* -------------------------
-   Model icons (silhouette mapping)
-   Map model id -> inline SVG (black silhouette)
--------------------------*/
+/* Model icons (silhouette mapping) */
 function modelIconSvg(id) {
-  // Simple black silhouette SVGs (kept small, monochrome)
   const svgs = {
-    flux: '<svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C9 6 6 8 4 9c2 2 6 4 8 6s6 2 8 0c0-4-4-9-8-13z" fill="#111"/></svg>',
-    turbo: '<svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12c3-4 8-6 10-6s7 2 10 6c-3 4-8 6-10 6S5 16 2 12z" fill="#111"/></svg>',
+    flux: '<svg class="silhouette" viewBox="0 0 24 24" fill="none"><path d="M12 2C9 6 6 8 4 9c2 2 6 4 8 6s6 2 8 0c0-4-4-9-8-13z" fill="#111"/></svg>',
+    turbo: '<svg class="silhouette" viewBox="0 0 24 24" fill="none"><path d="M2 12c3-4 8-6 10-6s7 2 10 6c-3 4-8 6-10 6S5 16 2 12z" fill="#111"/></svg>',
     'flux-realism': '<svg class="silhouette" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" fill="#111"/></svg>',
     kontext: '<svg class="silhouette" viewBox="0 0 24 24"><path d="M3 7h18v10H3z" fill="#111"/></svg>',
     realism: '<svg class="silhouette" viewBox="0 0 24 24"><circle cx="12" cy="10" r="5" fill="#111"/></svg>',
@@ -241,12 +285,10 @@ function modelIconSvg(id) {
   return svgs[id] || svgs.default;
 }
 
-/* -------------------------
-   Populate models
--------------------------*/
+/* Populate models */
 async function populateModelDropdown() {
   const inner = document.getElementById('modelDropdownInner');
-  inner.innerHTML = '<div class="text-xs text-gray-400">Loading models...</div>';
+  inner.innerHTML = '<div class="text-xs muted">Loading models...</div>';
   try {
     const resp = await fetch('/api/models');
     const data = await resp.json();
@@ -261,69 +303,46 @@ async function populateModelDropdown() {
       div.innerHTML = `${modelIconSvg(m.id)}<div><div class="text-sm font-medium">${m.name || m.id}</div><div class="text-xs muted">${m.desc || ''}</div></div>`;
       div.addEventListener('click', () => selectModelFromElement(div));
       inner.appendChild(div);
-      if (i===0) {
-        selectModelFromElement(div);
-      }
+      if (i===0) selectModelFromElement(div);
     });
-    if (models.length === 0) inner.innerHTML = '<div class="text-xs text-gray-400">No models found</div>';
+    if (models.length === 0) inner.innerHTML = '<div class="text-xs muted">No models found</div>';
   } catch (err) {
     console.warn('populateModelDropdown failed', err);
-    inner.innerHTML = '<div class="text-xs text-gray-400">Failed to load — using fallback</div>';
+    inner.innerHTML = '<div class="text-xs muted">Failed to load — using fallback</div>';
   }
 }
 
 function toggleModelDropdown(){
-  const btn = document.getElementById('modelDropdownButton');
   const dd = document.getElementById('modelDropdown');
-  const open = dd.classList.toggle('hidden');
-  btn.setAttribute('aria-expanded', (!open).toString());
+  dd.classList.toggle('hidden');
+  document.getElementById('modelDropdownButton').setAttribute('aria-expanded', (!dd.classList.contains('hidden')).toString());
 }
 
 function selectModelFromElement(el) {
   const model = el.getAttribute('data-model');
   const requiresAuth = el.getAttribute('data-requires-auth') === 'true';
-  const desc = el.getAttribute('data-desc') || '';
   document.getElementById('selectedModelName').textContent = el.querySelector('.text-sm')?.textContent || model;
-  const iconWrap = document.getElementById('selectedModelIcon');
-  iconWrap.innerHTML = el.querySelector('.silhouette')?.outerHTML || modelIconSvg(model);
+  document.getElementById('selectedModelIcon').innerHTML = el.querySelector('.silhouette')?.outerHTML || modelIconSvg(model);
   document.getElementById('modelDropdown').dataset.selectedModel = model;
-  // show/hide kontext image ref section
   const imageRefSection = document.getElementById('imageRefSection');
-  if (model === 'kontext') {
-    imageRefSection.style.display = 'block';
-    document.getElementById('useImgAspectBtn').classList.remove('hidden');
-  } else {
-    imageRefSection.style.display = 'none';
-    document.getElementById('useImgAspectBtn').classList.add('hidden');
-  }
-  // show auth warning if model requires auth
+  if (model === 'kontext') { imageRefSection.style.display = 'block'; document.getElementById('useImgAspectBtn').classList.remove('hidden'); }
+  else { imageRefSection.style.display = 'none'; document.getElementById('useImgAspectBtn').classList.add('hidden'); }
   const warn = document.getElementById('modelAuthWarning');
-  if (requiresAuth) {
-    warn.innerHTML = `Model requires server API key (POLLINATIONS_API_KEY) or test key. See Settings.`;
-    warn.classList.remove('hidden');
-  } else {
-    warn.classList.add('hidden');
-    warn.innerHTML = '';
-  }
-  // close dropdown
+  if (requiresAuth) { warn.innerHTML = `Model requires server API key (POLLINATIONS_API_KEY) or test key.`; warn.classList.remove('hidden'); } else { warn.classList.add('hidden'); warn.innerHTML = ''; }
   document.getElementById('modelDropdown').classList.add('hidden');
   document.getElementById('modelDropdownButton').setAttribute('aria-expanded','false');
 }
 
-/* -------------------------
-   Aspect ratio helpers & presets
--------------------------*/
+/* Aspect ratio and presets */
 function setPresetAspect(a,b) {
-  const width = parseInt(document.getElementById('widthInput').value) || 1024;
-  const newW = Math.max(128, Math.round(width));
+  const scaleW = 1024;
+  const newW = Math.max(128, Math.round(scaleW));
   const newH = Math.max(128, Math.round(newW * (b / a)));
   document.getElementById('widthInput').value = newW;
   document.getElementById('heightInput').value = newH;
   document.getElementById('detectedAspectLabel').textContent = `${a}:${b}`;
 }
-
-/* when ref image detected, show actual aspect option */
-document.getElementById('useImgAspectBtn').addEventListener('click', () => {
+document.getElementById?.('useImgAspectBtn')?.addEventListener?.('click', () => {
   if (window._lastRefAspect) {
     const [w,h] = window._lastRefAspect;
     document.getElementById('widthInput').value = Math.max(128, Math.round(w));
@@ -332,9 +351,7 @@ document.getElementById('useImgAspectBtn').addEventListener('click', () => {
   }
 });
 
-/* -------------------------
-   Image reference preview & paste/add flow
--------------------------*/
+/* Image reference preview & paste/add */
 const imgRefInput = document.getElementById('imageRefUrl');
 const addImgBtn = document.getElementById('addImageRefBtn');
 const imgRefPreviewWrap = document.getElementById('imageRefPreviewWrap');
@@ -348,21 +365,14 @@ function isLikelyImageUrl(url) {
   return /\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(url.split('?')[0]);
 }
 
-// show 'Add' when pasting a likely image url
-imgRefInput.addEventListener('input', (e) => {
+imgRefInput?.addEventListener('input', (e) => {
   const v = (e.target.value || '').trim();
-  if (isLikelyImageUrl(v)) {
-    addImgBtn.classList.remove('hidden');
-  } else {
-    addImgBtn.classList.add('hidden');
-  }
+  if (isLikelyImageUrl(v)) addImgBtn.classList.remove('hidden'); else addImgBtn.classList.add('hidden');
 });
 
-// on Add - validate and preview, detect aspect & size
-addImgBtn.addEventListener('click', async () => {
+addImgBtn?.addEventListener('click', async () => {
   const url = (imgRefInput.value || '').trim();
   if (!isLikelyImageUrl(url)) { alert('URL not recognized as an image'); return; }
-  // try to load
   try {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -370,13 +380,11 @@ addImgBtn.addEventListener('click', async () => {
       imgRefPreview.src = url;
       imgRefPreviewWrap.classList.remove('hidden');
       addImgBtn.classList.add('hidden');
-      // auto-detect aspect and offer to apply
       const naturalW = img.naturalWidth || Number(document.getElementById('widthInput').value) || 1024;
       const naturalH = img.naturalHeight || Number(document.getElementById('heightInput').value) || 1024;
       window._lastRefAspect = [naturalW, naturalH];
       imgRefInfo.textContent = `${naturalW}×${naturalH}`;
       imgRefSize.textContent = `${Math.round((naturalW*naturalH)/1000)} kpx`;
-      // show the Use ref aspect button
       document.getElementById('useImgAspectBtn').classList.remove('hidden');
       // set default width/height to reference aspect proportion (scale to 1024 width)
       const scaleW = 1024;
@@ -389,31 +397,31 @@ addImgBtn.addEventListener('click', async () => {
       addImgBtn.classList.remove('hidden');
     };
     img.src = url;
-  } catch (e) {
-    console.error('preview error', e);
-    alert('Error previewing image');
-  }
+  } catch (e) { console.error('preview error', e); alert('Error previewing image'); }
 });
 
-// support paste anywhere: if clipboard is image url and kontext selected, auto-fill and show Add
-document.addEventListener('paste', (ev) => {
-  try {
-    const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
-    if (isLikelyImageUrl(text)) {
-      // only show if kontext is selected
-      const model = document.getElementById('modelDropdown').dataset.selectedModel;
-      if (model === 'kontext') {
-        imgRefInput.value = text;
-        addImgBtn.classList.remove('hidden');
-        ev.preventDefault();
-      }
-    }
-  } catch(e) {}
-});
+/* Negative prompt presets & traits */
+function applyNegativePreset(el) {
+  const v = el.getAttribute('data-val') || '';
+  const existing = (document.getElementById('negativePromptHidden')?.value || '');
+  const newVal = existing ? existing + ', ' + v : v;
+  if (!document.getElementById('negativePromptHidden')) {
+    const hidden = el('input', { type: 'hidden', id: 'negativePromptHidden', value: newVal });
+    document.body.appendChild(hidden);
+  } else document.getElementById('negativePromptHidden').value = newVal;
+  // visual feedback
+  alert('Negative preset applied: ' + v);
+}
+function clearNegativePrompt() { if (document.getElementById('negativePromptHidden')) document.getElementById('negativePromptHidden').value = ''; alert('Negative prompt cleared'); }
 
-/* -------------------------
-   Results grid + create result card (compact)
--------------------------*/
+function appendTrait(el) {
+  const v = el.getAttribute('data-val') || '';
+  const promptEl = document.getElementById('promptInput');
+  const cur = (promptEl.value || '').trim();
+  promptEl.value = cur ? cur + ', ' + v : v;
+}
+
+/* Results grid */
 const resultsArea = document.getElementById('resultsArea');
 const statusSummary = document.getElementById('statusSummary');
 
@@ -425,7 +433,6 @@ function updateStatusSummary() {
   const err = resultsArea.querySelectorAll('.image-card[data-status="error"]').length;
   statusSummary.textContent = `Total ${total} · Rendering ${rendering} · Done ${done} · Error ${err}`;
 }
-
 function makeStatusPill(status) {
   const span = el('span', { class: 'status-pill ' + (status === 'rendering' ? 'status-rendering' : status === 'done' ? 'status-done' : 'status-error') });
   if (status === 'rendering') span.innerHTML = '<span class="loading"></span><span>Rendering</span>';
@@ -434,7 +441,7 @@ function makeStatusPill(status) {
   return span;
 }
 
-function createResultCard({ id, prompt, model, seed, width, height }) {
+function createResultCard({ id, prompt, model, seed, width, height, nsfwFlag }) {
   const card = el('div', { class: 'image-card bg-white rounded-lg p-2 border border-gray-100', 'data-id': id, 'data-status': 'rendering' });
   const header = el('div', { class: 'flex items-center justify-between gap-2 mb-2' });
   const left = el('div', { class: 'flex items-center gap-2' });
@@ -447,7 +454,7 @@ function createResultCard({ id, prompt, model, seed, width, height }) {
   header.appendChild(makeStatusPill('rendering'));
   card.appendChild(header);
 
-  const imgWrap = el('div', { class: 'mb-2' });
+  const imgWrap = el('div', { class: 'mb-2 relative' });
   const placeholder = el('div', { class: 'bg-gray-50 rounded-md flex items-center justify-center', style: 'height:120px' }, el('div', { class: 'muted' }, 'Rendering…'));
   imgWrap.appendChild(placeholder);
   card.appendChild(imgWrap);
@@ -470,15 +477,18 @@ function createResultCard({ id, prompt, model, seed, width, height }) {
   function updateReady({ imageUrl, details }) {
     card.setAttribute('data-imageurl', imageUrl);
     card.setAttribute('data-status', 'done');
-    // replace status pill
     const headRight = header.querySelector('.status-pill');
     headRight.replaceWith(makeStatusPill('done'));
-    // thumbnail
     imgWrap.innerHTML = '';
     const img = el('img', { src: imageUrl, alt: prompt, class: 'image-thumb', loading: 'lazy' });
     img.addEventListener('click', () => openPreview({ id, prompt, model, seed, width, height, imageUrl, details, time: Date.now(), status: 'done' }));
     imgWrap.appendChild(img);
-    // attach dataset details
+    // nsfw handling: if flagged, overlay a hide until reveal control
+    if (nsfwFlag) {
+      const overlay = el('div', { class: 'nsfw-overlay', title: 'Click to reveal NSFW preview' }, '🔞 Sensitive - Click to reveal');
+      overlay.addEventListener('click', () => overlay.remove());
+      imgWrap.appendChild(overlay);
+    }
     card.dataset.prompt = prompt;
     card.dataset.model = model;
     card.dataset.seed = seed || '';
@@ -502,9 +512,7 @@ function createResultCard({ id, prompt, model, seed, width, height }) {
   return { card, updateReady, updateError };
 }
 
-/* -------------------------
-   Preview modal functions
--------------------------*/
+/* Preview modal functions */
 function openPreview(data = {}) {
   const modal = document.getElementById('previewModal');
   document.getElementById('previewImage').src = data.imageUrl || data['imageUrl'] || '';
@@ -524,42 +532,48 @@ function openPreview(data = {}) {
 function closePreview() { const modal = document.getElementById('previewModal'); modal.classList.remove('flex'); modal.classList.add('hidden'); }
 function downloadImage(url) { if (!url) return; const a = document.createElement('a'); a.href = url; a.download = `taurus-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); }
 
-/* -------------------------
-   Generate flow (uses session key if present)
--------------------------*/
-function sessionKey() { try { return localStorage.getItem('POLLINATIONS_SESSION_KEY'); } catch (e) { return null; } }
-function setSessionKey(k) { try { if (k) localStorage.setItem('POLLINATIONS_SESSION_KEY', k); else localStorage.removeItem('POLLINATIONS_SESSION_KEY'); } catch(e){} }
+/* Generate flow (include negative_prompt, cfg_scale, steps, sampler, nsfw flag) */
+function sessionKey() { try { return localStorage.getItem('POLLINATIONS_SESSION_KEY'); } catch(e) { return null; } }
 
 let counter = 0;
 async function generateImage() {
   const prompt = (document.getElementById('promptInput').value || '').trim();
   if (!prompt) return alert('Masukkan prompt terlebih dahulu');
 
-  const width = parseInt(document.getElementById('widthInput').value) || 1024;
-  const height = parseInt(document.getElementById('heightInput').value) || 1024;
+  const width = Math.max(128, parseInt(document.getElementById('widthInput').value) || 1024);
+  const height = Math.max(128, parseInt(document.getElementById('heightInput').value) || 1024);
+  const cfgScale = parseFloat(document.getElementById('cfgScale')?.value || 7.0);
+  const steps = parseInt(document.getElementById('steps')?.value || 28);
+  const sampler = document.getElementById('sampler')?.value || 'k_lms';
+  const nologo = document.getElementById('nologoCheck').checked;
+  const nsfw = document.getElementById('nsfwToggle').checked;
+
+  // seed handling
   const seedInput = document.getElementById('seedInput').value;
   const lockSeed = document.getElementById('lockSeed').checked;
-  // seed handling: if locked and value present, keep; if empty generate random; if provided use it
   let seed;
   if (seedInput) seed = Number(seedInput);
   else seed = Math.floor(Math.random() * 1000000);
-  if (lockSeed) {
-    // preserve seed in input for subsequent requests
-    document.getElementById('seedInput').value = seed;
-  }
+  if (lockSeed) document.getElementById('seedInput').value = seed;
 
   const model = document.getElementById('modelDropdown').dataset.selectedModel || 'flux';
   const imageRefValue = (document.getElementById('imageRefUrl').value || '').trim() || undefined;
   const clientKey = sessionKey();
 
+  // negative prompt
+  const negativePrompt = (document.getElementById('negativePromptHidden')?.value || '').trim() || undefined;
+
   // create placeholder card
   const id = 'r' + (++counter);
-  const { card, updateReady, updateError } = createResultCard({ id, prompt, model, seed, width, height });
+  const { card, updateReady, updateError } = createResultCard({ id, prompt, model, seed, width, height, nsfwFlag: nsfw });
   resultsArea.insertBefore(card, resultsArea.firstChild);
   updateStatusSummary();
 
-  const payload = { prompt, model, width, height, seed };
+  // build payload
+  const payload = { prompt, model, width, height, seed, cfg_scale: cfgScale, steps, sampler, nologo };
+  if (negativePrompt) payload.negative_prompt = negativePrompt;
   if (imageRefValue && model === 'kontext') payload.imageUrl = imageRefValue;
+  if (nsfw) payload.nsfw = true;
   if (clientKey) payload.clientKey = clientKey;
 
   try {
@@ -572,7 +586,6 @@ async function generateImage() {
     if (!resp.ok || !data || !data.success) {
       const details = (data && (data.details || data.error)) ? (data.details || data.error) : `HTTP ${resp.status}`;
       updateError(details);
-      // also send to logs endpoint best-effort
       try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'generate failed', details }) }); } catch(e){}
       return;
     }
@@ -584,31 +597,30 @@ async function generateImage() {
   }
 }
 
-/* -------------------------
-   Seed helpers
--------------------------*/
-document.getElementById('randomSeedBtn').addEventListener('click', () => {
-  document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
-});
+/* Negative prompt helper exports for UI (no visible textarea): */
+function clearNegativePrompt() { if (document.getElementById('negativePromptHidden')) document.getElementById('negativePromptHidden').value = ''; }
+window.applyNegativePreset = applyNegativePreset;
+window.appendTrait = appendTrait;
 
-/* -------------------------
-   Clear all
--------------------------*/
-document.getElementById('clearAllBtn').addEventListener('click', () => {
-  if (confirm('Clear all results?')) { resultsArea.innerHTML = ''; updateStatusSummary(); }
-});
+/* Misc controls */
+document.getElementById('randomSeedBtn').addEventListener('click', () => { document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000); });
+document.getElementById('clearAllBtn').addEventListener('click', () => { if (confirm('Clear all results?')) { resultsArea.innerHTML = ''; updateStatusSummary(); } });
 
-/* -------------------------
-   Init
--------------------------*/
+/* Init */
 document.addEventListener('DOMContentLoaded', () => {
   populateModelDropdown().catch(()=>{});
   document.getElementById('generateBtn').addEventListener('click', generateImage);
-  // Enter to submit
-  document.getElementById('promptInput').addEventListener('keydown', (e) => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); generateImage(); } });
-
-  // ensure addImgBtn toggles visibility based on input initial state
+  document.getElementById('promptInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateImage(); } });
   if (isLikelyImageUrl(imgRefInput.value)) addImgBtn.classList.remove('hidden');
+  // make sure useRefAspect button references exist
+  document.getElementById('useImgAspectBtn').addEventListener('click', () => {
+    if (window._lastRefAspect) {
+      const [w,h] = window._lastRefAspect;
+      document.getElementById('widthInput').value = Math.max(128, Math.round(w));
+      document.getElementById('heightInput').value = Math.max(128, Math.round(h));
+      document.getElementById('detectedAspectLabel').textContent = `Ref ${Math.round(w)}×${Math.round(h)}`;
+    }
+  });
 });
 
 /* close preview on backdrop click */
