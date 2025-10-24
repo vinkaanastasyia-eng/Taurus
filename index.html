@@ -1,567 +1,453 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Taurus AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; }
-        textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar { display: none; }
-        textarea, .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .loading { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .image-result { animation: fadeIn 0.3s ease-in; }
-        .image-actions { opacity: 0; transition: opacity 0.2s; }
-        .image-result:hover .image-actions { opacity: 1; }
-        .model-dropdown { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-        .model-dropdown.open { max-height: 500px; overflow-y: auto; }
-        .model-option { transition: background-color 0.15s; }
-        .model-option:hover, .model-option:focus { background-color: rgba(0,0,0,0.05); outline: none; }
-        .model-option.selected { background-color: #e8f0fe; }
-        .model-option.focused { background-color: rgba(59, 130, 246, 0.1); }
-        .banana-icon { width: 28px; height: 28px; }
-    </style>
-    <script> tailwind.config = { darkMode: 'class' } </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taurus AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .loading { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display:inline-block; vertical-align:middle; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .image-card { transition: transform .12s, box-shadow .12s; }
+    .image-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .scrollable { overflow: auto; }
+    .model-dropdown { max-height: 0; overflow: hidden; transition: max-height .18s ease; }
+    .model-dropdown.open { max-height: 420px; }
+    .modal-backdrop { background: rgba(0,0,0,.6); }
+    .status-pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; display:inline-flex; align-items:center; gap:6px; }
+    .status-rendering { background: #fff7ed; color: #92400e; border: 1px solid #fde3bf; }
+    .status-done { background: #ecfdf5; color: #065f46; border: 1px solid #bbf7d0; }
+    .status-error { background: #fff1f2; color: #9f1239; border: 1px solid #fecaca; }
+    textarea { resize: none; }
+    .left-col { min-width: 300px; max-width: 360px; }
+    .image-preview-small { max-width: 100%; max-height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; }
+  </style>
 </head>
-<body class="bg-white text-gray-900">
-    <div class="flex h-screen">
-        <!-- Left Sidebar -->
-        <div class="w-16 border-r border-gray-200 bg-white flex flex-col items-center py-4 gap-4">
-            <button class="p-3 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></button>
-            <button class="p-3 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button>
-            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleHistory()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.66-2.88l-1.42 1.42A9 9 0 1 0 13 3z"/></svg></button>
-            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleSettings()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M12 15a3 3 0 110-6 3 3 0 010 6z"/></svg></button>
-            <button class="p-3 rounded-lg hover:bg-gray-100" onclick="toggleTheme()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></button>
+<body class="bg-gray-50 text-gray-900">
+  <div class="min-h-screen flex">
+    <!-- Left sidebar (settings persistent) -->
+    <aside class="left-col bg-white border-r border-gray-200 p-4 flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <svg class="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.5 7c..."/></svg>
+        <div>
+          <h1 class="text-lg font-semibold">Taurus AI</h1>
+          <div class="text-xs text-gray-500">Gen image · Local UI</div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-xs text-gray-600">Model</label>
+        <div class="relative mt-2">
+          <button id="modelDropdownButton" aria-haspopup="listbox" aria-expanded="false" class="w-full text-left px-3 py-2 bg-gray-100 rounded-lg flex items-center justify-between" onclick="toggleModelDropdown()">
+            <div class="flex items-center gap-2">
+              <span id="selectedModelIcon">⚡</span>
+              <span id="selectedModelName" class="font-medium text-sm">Flux</span>
+            </div>
+            <svg class="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+
+          <div id="modelDropdown" class="model-dropdown mt-2 absolute left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-sm z-30">
+            <div class="p-2" id="modelDropdownInner">
+              <div class="text-xs text-gray-400">Loading models...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-xs text-gray-600">Prompt</label>
+        <textarea id="promptInput" rows="3" class="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50" placeholder="Describe the image you want (keep it here while generating)"></textarea>
+
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <input id="widthInput" type="number" value="1024" min="256" max="2048" step="64" class="px-2 py-2 rounded-lg border border-gray-200 text-sm">
+          <input id="heightInput" type="number" value="1024" min="256" max="2048" step="64" class="px-2 py-2 rounded-lg border border-gray-200 text-sm">
         </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col">
-            <!-- Header -->
-            <div class="border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <svg class="banana-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 7c-.2-.6-.6-1-1.2-1.3-.8-.4-1.8-.4-2.6 0-1.7.7-3 2.3-4 4.2-.3.6-.6 1.2-.8 1.8-.1-.4-.3-.8-.5-1.2-1-2-2.4-3.7-4.2-4.4-.9-.4-1.9-.4-2.8 0-.6.3-1 .7-1.2 1.3-.3.8-.2 1.7.2 2.5.8 1.7 2.4 3 4.2 4 .6.3 1.2.6 1.8.8-.4.1-.8.3-1.2.5-2 1-3.7 2.4-4.4 4.2-.4.9-.4 1.9 0 2.8.3.6.7 1 1.3 1.2.8.3 1.7.2 2.5-.2 1.7-.8 3-2.4 4-4.2.3-.6.6-1.2.8-1.8.1.4.3.8.5 1.2 1 2 2.4 3.7 4.2 4.4.9.4 1.9.4 2.8 0 .6-.3 1-.7 1.2-1.3.3-.8.2-1.7-.2-2.5-.8-1.7-2.4-3-4.2-4-.6-.3-1.2-.6-1.8-.8.4-.1.8-.3 1.2-.5 2-1 3.7-2.4 4.4-4.2.4-.9.4-1.9 0-2.8z"/></svg>
-                    <h1 class="text-xl font-medium">Taurus AI</h1>
-                </div>
-
-                <div class="relative">
-                    <button 
-                        id="modelDropdownButton"
-                        onclick="toggleModelDropdown()" 
-                        onkeydown="handleDropdownButtonKeydown(event)"
-                        aria-haspopup="listbox"
-                        aria-expanded="false"
-                        aria-labelledby="modelDropdownLabel"
-                        class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                    >
-                        <span id="selectedModelIcon" aria-hidden="true">⚡</span>
-                        <span id="selectedModelName" class="font-medium text-sm">Flux</span>
-                        <svg class="w-4 h-4" id="dropdownArrow" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
-                    </button>
-                    <span id="modelDropdownLabel" class="sr-only">Select AI Model</span>
-
-                    <div 
-                        id="modelDropdown" 
-                        role="listbox"
-                        aria-labelledby="modelDropdownLabel"
-                        tabindex="-1"
-                        class="model-dropdown absolute top-full mt-2 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-                    >
-                        <div class="p-2">
-                            <!-- static fallback options (will be replaced by populateModelDropdown on load) -->
-                            <div role="option" aria-selected="true" tabindex="0" data-model="flux" data-icon="⚡" data-name="Flux" class="model-option selected px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xl" aria-hidden="true">⚡</span>
-                                    <div class="flex-1">
-                                        <div class="font-medium text-sm">Flux</div>
-                                        <div class="text-xs text-gray-500">Balanced</div>
-                                    </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                                </div>
-                            </div>
-                            <!-- additional static options kept as fallback -->
-                            <div role="option" aria-selected="false" tabindex="-1" data-model="turbo" data-icon="🚀" data-name="Turbo" class="model-option px-3 py-3 rounded-lg cursor-pointer" onkeydown="handleOptionKeydown(event)" onclick="selectModelFromClick(this)">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xl" aria-hidden="true">🚀</span>
-                                    <div class="flex-1">
-                                        <div class="font-medium text-sm">Turbo</div>
-                                        <div class="text-xs text-gray-500">Fast</div>
-                                    </div>
-                                    <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results Area -->
-            <div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center justify-center">
-                <div id="resultsArea" class="w-full max-w-4xl px-8 py-8"></div>
-
-                <div id="emptyState" class="flex flex-col items-center justify-center py-12">
-                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <p class="text-gray-500 text-center">Describe an image to generate</p>
-                </div>
-            </div>
+        <div class="mt-3 flex gap-2 items-center">
+          <label class="text-sm flex items-center gap-2"><input id="nologoCheck" type="checkbox" checked> No logo</label>
+          <label class="text-sm flex items-center gap-2"><input id="enhanceCheck" type="checkbox"> Enhance</label>
         </div>
+
+        <div class="mt-3 flex gap-2 items-center">
+          <label class="text-sm flex items-center gap-2 text-red-600"><input id="nsfwToggle" type="checkbox"> NSFW</label>
+          <input id="seedInput" type="number" placeholder="seed" class="ml-auto px-2 py-2 rounded-lg border border-gray-200 text-sm w-28" />
+        </div>
+
+        <div class="mt-3">
+          <label class="text-xs text-gray-600">Image reference (paste URL to preview)</label>
+          <div class="mt-2 flex gap-2 items-center">
+            <input id="imageRefUrl" type="url" placeholder="Paste image URL (img2img)" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+            <button id="clearImageRef" class="px-2 py-2 bg-gray-100 rounded-lg">Clear</button>
+          </div>
+          <div id="imageRefPreviewWrap" class="mt-2 hidden">
+            <div class="flex items-center gap-2">
+              <img id="imageRefPreview" src="" alt="preview" class="image-preview-small" />
+              <div class="text-xs text-gray-500">Reference preview — will be used for image→image if model supports it</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-2">
+          <button id="generateBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg">Generate</button>
+          <button onclick="randomSeed()" title="Random seed" class="px-3 py-2 bg-gray-100 rounded-lg">🎲</button>
+        </div>
+
+        <div class="mt-4 text-xs text-gray-500">
+          <div>Settings are persistent on this left sidebar.</div>
+          <div>Use the model dropdown to select available models from the server. Select a kontext (Img2Img) model to enable image→image.</div>
+        </div>
+      </div>
+
+      <div class="mt-auto text-xs text-gray-400">
+        <div>Version: local</div>
+        <div class="mt-2">Errors are sent to /api/logs and visible in your platform logs.</div>
+      </div>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="flex-1 p-6 flex flex-col gap-6">
+      <header class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-semibold">Generated images</h2>
+          <p class="text-sm text-gray-500">Results are shown below — scroll, preview, download, or re-generate.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="statusSummary" class="text-sm text-gray-600">Idle</div>
+        </div>
+      </header>
+
+      <section id="resultsWrapper" class="flex-1 bg-transparent overflow-hidden">
+        <div id="resultsArea" class="results-grid scrollable p-2 h-full" style="height: calc(100% - 8px);">
+          <!-- cards will appear here -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="modal-backdrop absolute inset-0"></div>
+    <div class="relative z-10 max-w-4xl w-full mx-4 bg-white rounded-lg overflow-hidden shadow-xl">
+      <div class="flex items-center justify-between p-3 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <div id="previewStatusPill" class="status-pill status-done">Status</div>
+          <div id="previewModel" class="text-sm text-gray-600">Model</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="previewDownloadBtn" class="px-3 py-1.5 bg-gray-100 rounded">Download</button>
+          <button onclick="closePreview()" class="px-3 py-1.5 bg-red-50 text-red-600 rounded">Close</button>
+        </div>
+      </div>
+      <div class="p-4 grid grid-cols-2 gap-4">
+        <div class="col-span-2 md:col-span-1 flex items-center justify-center bg-gray-50 p-4">
+          <img id="previewImage" src="" alt="Preview" class="max-h-[60vh] object-contain w-full" />
+        </div>
+        <div class="col-span-2 md:col-span-1">
+          <h3 class="font-medium text-sm mb-2">Prompt</h3>
+          <pre id="previewPrompt" class="bg-gray-50 rounded p-2 text-sm text-gray-700 whitespace-pre-wrap"></pre>
+
+          <div class="mt-4 text-sm text-gray-600">
+            <div><strong>Model:</strong> <span id="previewModelDetail"></span></div>
+            <div class="mt-2"><strong>Seed:</strong> <span id="previewSeedDetail"></span></div>
+            <div class="mt-2"><strong>Size:</strong> <span id="previewSizeDetail"></span></div>
+            <div class="mt-2"><strong>Generated at:</strong> <span id="previewTimeDetail"></span></div>
+            <div class="mt-3"><strong>Status detail:</strong><div id="previewDetailText" class="mt-1 text-xs text-gray-500"></div></div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Prompt Box - Fixed Bottom -->
-    <div class="fixed bottom-0 left-16 right-0 border-t border-gray-200 bg-white p-4 z-20">
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                <textarea 
-                    id="promptInput" 
-                    placeholder="Enter your prompt here"
-                    class="w-full bg-transparent border-none outline-none resize-none"
-                    rows="1"
-                    style="max-height: 200px;"
-                ></textarea>
-
-                <div class="flex items-center justify-between mt-3">
-                    <div class="flex gap-2">
-                        <button class="p-2 hover:bg-gray-200 rounded-lg" onclick="toggleStylePresets()" title="Styles">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                        </button>
-                        <button class="p-2 hover:bg-gray-200 rounded-lg" onclick="toggleImageReference()" title="Image">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                        </button>
-                    </div>
-
-                    <button 
-                        id="generateBtn"
-                        class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                    >
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16346272 C3.34915502,0.9 2.40734225,1.00636533 1.77946707,1.4776575 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99021575 L3.03521743,10.4311088 C3.03521743,10.5882061 3.34915502,10.7453035 3.50612381,10.7453035 L16.6915026,11.5307905 C16.6915026,11.5307905 17.1624089,11.5307905 17.1624089,12.0020827 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/></svg>
-                    </button>
-                </div>
-
-                <div id="stylePresetsPanel" class="hidden mt-3 pt-3 border-t border-gray-200">
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="applyStyle('realistic')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">📷 Realistic</button>
-                        <button onclick="applyStyle('anime')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🎌 Anime</button>
-                        <button onclick="applyStyle('oil-painting')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🖼️ Oil Paint</button>
-                        <button onclick="applyStyle('cyberpunk')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🌆 Cyberpunk</button>
-                        <button onclick="applyStyle('watercolor')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">💧 Watercolor</button>
-                        <button onclick="applyStyle('3d-render')" class="px-3 py-1.5 text-xs bg-gray-200 rounded-full hover:bg-gray-300">🎮 3D</button>
-                    </div>
-                </div>
-
-                <div id="imageReferencePanel" class="hidden mt-3 pt-3 border-t border-gray-200">
-                    <input 
-                        type="text" 
-                        id="imageRefUrl" 
-                        placeholder="Paste image URL for reference..."
-                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
-                    />
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Sidebar (kept as-is, IDs adjusted earlier) -->
-    <div id="settingsSidebar" class="fixed top-0 right-0 w-96 h-full bg-white border-l border-gray-200 transform translate-x-full transition-transform z-40 overflow-y-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-medium">Settings</h2>
-                <button onclick="toggleSettings()" class="p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                </button>
-            </div>
-
-            <div class="space-y-6">
-                <div>
-                    <label class="text-sm font-medium block mb-2">API Token</label>
-                    <input type="password" id="apiToken" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" placeholder="Enter API token"/>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-sm font-medium block mb-2">Width</label>
-                        <input type="number" id="widthInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium block mb-2">Height</label>
-                        <input type="number" id="heightInput" value="1024" min="256" max="2048" step="64" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium block mb-2">Quick Presets</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setSize(1024, 1024)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">1:1</button>
-                        <button onclick="setSize(1280, 720)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">16:9</button>
-                        <button onclick="setSize(720, 1280)" class="px-2 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200">9:16</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium block mb-2">Seed</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="seedInput" placeholder="Random" class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
-                        <button onclick="randomSeed()" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">🎲</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium block mb-2">Batch Count</label>
-                    <input type="number" id="batchCount" value="1" min="1" max="4" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"/>
-                </div>
-
-                <label class="flex items-center gap-3 cursor-pointer p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <input type="checkbox" id="nsfwToggle" class="w-4 h-4"/>
-                    <div>
-                        <div class="font-medium text-sm">🔞 NSFW Content</div>
-                        <div class="text-xs text-gray-500">Enable mature content</div>
-                    </div>
-                </label>
-
-                <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="enhanceCheck" class="w-4 h-4"/>
-                        <span class="text-sm">Enhance Prompt</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="nologoCheck" checked class="w-4 h-4"/>
-                        <span class="text-sm">Remove Watermark</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="privateCheck" class="w-4 h-4"/>
-                        <span class="text-sm">Private Mode</span>
-                    </label>
-                </div>
-
-                <button onclick="clearAllResults()" class="w-full px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium">Clear All</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- History Sidebar -->
-    <div id="historySidebar" class="fixed top-0 right-0 w-96 h-full bg-white border-l border-gray-200 transform translate-x-full transition-transform z-40 overflow-y-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-medium">History</h2>
-                <button onclick="toggleHistory()" class="p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                </button>
-            </div>
-            <div id="historyList" class="space-y-2"></div>
-            <button onclick="clearHistory()" class="mt-6 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">Clear History</button>
-        </div>
-    </div>
-
-    <!-- Overlay -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30" onclick="closeSidebars()"></div>
-
-    <script>
-    /* -------------------------
-       Utility helpers
-    -------------------------*/
-    function escapeHtml(unsafe) {
-        return (unsafe || '')
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#039;');
+  <!-- Scripts -->
+  <script>
+    /* helpers (same as earlier) */
+    function el(tag, props = {}, ...children) {
+      const node = document.createElement(tag);
+      Object.entries(props).forEach(([k,v]) => {
+        if (k === 'class') node.className = v;
+        else if (k.startsWith('data-')) node.setAttribute(k, v);
+        else node[k] = v;
+      });
+      children.forEach(ch => { if (typeof ch === 'string') node.appendChild(document.createTextNode(ch)); else if (ch) node.appendChild(ch); });
+      return node;
     }
-    function escapeJs(s) {
-        return (s||'').replaceAll('\\', '\\\\').replaceAll("'", "\\'").replaceAll("\n", "\\n").replaceAll("\r", "");
-    }
+    function fmtTime(ts = Date.now()){ return new Date(ts).toLocaleString(); }
+    function makeStatusPill(status){ const span = el('span', { class: 'status-pill ' + (status === 'rendering' ? 'status-rendering' : status === 'done' ? 'status-done' : 'status-error') }); if (status==='rendering') span.innerHTML = '<span class="loading"></span><span>Rendering</span>'; else if (status==='done') span.textContent='Done'; else span.textContent='Error'; return span; }
 
-    /* -------------------------
-       Simple UI toggles (placeholders)
-       (You can expand these if you want)
-    -------------------------*/
-    function toggleSettings() { document.getElementById('settingsSidebar').classList.toggle('translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }
-    function toggleHistory() { document.getElementById('historySidebar').classList.toggle('translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }
-    function closeSidebars(){ document.getElementById('settingsSidebar').classList.add('translate-x-full'); document.getElementById('historySidebar').classList.add('translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); }
-    function toggleStylePresets(){ document.getElementById('stylePresetsPanel').classList.toggle('hidden'); }
-    function toggleImageReference(){ document.getElementById('imageReferencePanel').classList.toggle('hidden'); }
-    function setSize(w,h){ document.getElementById('widthInput').value = w; document.getElementById('heightInput').value = h; }
-    function randomSeed(){ document.getElementById('seedInput').value = Math.floor(Math.random()*1000000); }
-
-    /* -------------------------
-       Model dropdown handling
-    -------------------------*/
-    function toggleModelDropdown() {
-        const btn = document.getElementById('modelDropdownButton');
-        const dropdown = document.getElementById('modelDropdown');
-        const expanded = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', (!expanded).toString());
-        dropdown.classList.toggle('open');
-    }
-    function handleDropdownButtonKeydown(e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleModelDropdown(); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); focusFirstModelOption(); }
-    }
-    function handleOptionKeydown(e) {
-        const el = e.currentTarget;
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectModelFromClick(el); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); (el.nextElementSibling || el).focus(); }
-        if (e.key === 'ArrowUp') { e.preventDefault(); (el.previousElementSibling || el).focus(); }
-        if (e.key === 'Escape') { document.getElementById('modelDropdownButton').focus(); toggleModelDropdown(); }
-    }
-    function focusFirstModelOption() {
-        const dropdown = document.getElementById('modelDropdown');
-        const first = dropdown.querySelector('.model-option');
-        first && first.focus();
-    }
-
-    // create element for a model
-    function makeModelOption(model) {
-        const div = document.createElement('div');
-        div.setAttribute('role','option');
-        div.setAttribute('tabindex','-1');
-        div.className = 'model-option px-3 py-3 rounded-lg cursor-pointer';
-        div.dataset.model = model.id;
-        div.dataset.icon = model.icon || '🎨';
-        div.dataset.name = model.name || model.id;
-        div.innerHTML = `
-            <div class="flex items-center gap-3">
-                <span class="text-xl" aria-hidden="true">${model.icon || '🎨'}</span>
-                <div class="flex-1">
-                    <div class="font-medium text-sm">${model.name || model.id}</div>
-                    <div class="text-xs text-gray-500">${model.desc || ''}</div>
-                </div>
-                <svg class="w-5 h-5 text-blue-600 model-check hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </div>
-        `;
-        div.addEventListener('click', () => selectModelFromClick(div));
-        div.addEventListener('keydown', handleOptionKeydown);
-        return div;
-    }
-
-    // populate dropdown from /api/models, fallback to existing markup on failure
+    /* models */
     async function populateModelDropdown() {
-        const dropdown = document.getElementById('modelDropdown');
-        const selectedName = document.getElementById('selectedModelName');
-        const selectedIcon = document.getElementById('selectedModelIcon');
-
-        try {
-            const resp = await fetch('/api/models');
-            if (!resp.ok) throw new Error('Failed to load models');
-            const data = await resp.json();
-            if (!data || !Array.isArray(data.models)) throw new Error('Invalid models response');
-
-            // clear and add
-            dropdown.innerHTML = '<div class="p-2"></div>';
-            const container = dropdown.querySelector('.p-2');
-            data.models.forEach((m, i) => {
-                const opt = makeModelOption(m);
-                if (i === 0) {
-                    opt.classList.add('selected');
-                    opt.setAttribute('aria-selected','true');
-                    opt.setAttribute('tabindex','0');
-                    selectedName.textContent = m.name || m.id;
-                    selectedIcon.textContent = m.icon || '🎨';
-                    dropdown.dataset.selectedModel = m.id;
-                }
-                container.appendChild(opt);
-            });
-        } catch (err) {
-            console.warn('populateModelDropdown failed, keeping static options. Error:', err);
-        }
-    }
-
-    function selectModelFromClick(el) {
-        const dropdown = document.getElementById('modelDropdown');
-        const selectedName = document.getElementById('selectedModelName');
-        const selectedIcon = document.getElementById('selectedModelIcon');
-
-        const prev = dropdown.querySelector('.model-option.selected');
-        if (prev) {
-            prev.classList.remove('selected');
-            prev.querySelector('.model-check')?.classList.add('hidden');
-            prev.setAttribute('aria-selected','false');
-            prev.setAttribute('tabindex','-1');
-        }
-
-        el.classList.add('selected');
-        el.querySelector('.model-check')?.classList.remove('hidden');
-        el.setAttribute('aria-selected','true');
-        el.setAttribute('tabindex','0');
-
-        selectedName.textContent = el.dataset.name || el.dataset.model;
-        selectedIcon.textContent = el.dataset.icon || '🎨';
-        dropdown.dataset.selectedModel = el.dataset.model;
-
-        // close dropdown
-        const btn = document.getElementById('modelDropdownButton');
-        btn.setAttribute('aria-expanded','false');
-        dropdown.classList.remove('open');
-        btn.focus();
-    }
-
-    // helper used by regenerate
-    function selectModelFromElement(el) {
-        if (!el) return;
-        // el may be DOM element; simulate click selection behavior
-        selectModelFromClick(el);
-    }
-
-    /* -------------------------
-       History & small helpers
-    -------------------------*/
-    function addToHistory(prompt) {
-        const list = document.getElementById('historyList');
-        const item = document.createElement('div');
-        item.className = 'p-2 border rounded bg-white text-sm';
-        item.textContent = prompt;
-        list.insertBefore(item, list.firstChild);
-    }
-    function clearHistory(){ document.getElementById('historyList').innerHTML = ''; }
-
-    /* -------------------------
-       Image generation
-    -------------------------*/
-    async function generateImage() {
-        const promptEl = document.getElementById('promptInput');
-        const prompt = (promptEl?.value || '').trim();
-        if (!prompt) return alert('Masukkan prompt terlebih dahulu');
-
-        const btn = document.getElementById('generateBtn');
-        btn.disabled = true;
-        const prevHtml = btn.innerHTML;
-        btn.innerHTML = '<div class="loading"></div>';
-
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) emptyState.style.display = 'none';
-
-        try {
-            const width = parseInt(document.getElementById('widthInput').value) || 1024;
-            const height = parseInt(document.getElementById('heightInput').value) || 1024;
-            const batch = parseInt(document.getElementById('batchCount').value) || 1;
-            const nsfw = document.getElementById('nsfwToggle').checked;
-            const enhance = document.getElementById('enhanceCheck').checked;
-            const nologo = document.getElementById('nologoCheck').checked;
-            const imageRef = document.getElementById('imageRefUrl').value.trim();
-            const option = document.querySelector('.model-option.selected') || document.querySelector('[data-model="flux"]');
-            const selectedModel = option ? option.getAttribute('data-model') : 'flux';
-
-            addToHistory(prompt);
-
-            for (let i = 0; i < batch; i++) {
-                const payload = {
-                    prompt,
-                    imageUrl: imageRef || undefined,
-                    model: selectedModel,
-                    width,
-                    height,
-                    seed: document.getElementById('seedInput').value || undefined,
-                    nologo: nologo || undefined,
-                    enhance: enhance || undefined,
-                    nsfw: nsfw || undefined
-                };
-
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json().catch(()=>({}));
-                if (!response.ok || !data.success) {
-                    const details = (data && data.details) ? data.details : (data && data.error) ? data.error : 'Unknown error';
-                    alert('Gagal menghasilkan gambar: ' + details);
-                    break;
-                }
-
-                const result = document.createElement('div');
-                result.className = 'image-result mb-6 p-6 bg-gray-50 rounded-2xl';
-                result.innerHTML = `
-                    <div class="flex gap-4 mb-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">T</div>
-                        <div class="flex-1">
-                            <div class="text-sm text-gray-500 mb-1">You</div>
-                            <div class="text-base">${escapeHtml(prompt)}</div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <img src="${data.imageUrl}" alt="${escapeHtml(prompt)}" class="w-full rounded-lg" />
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="regenerateImage('${escapeJs(prompt)}', '${selectedModel}')" class="px-3 py-2 bg-white border rounded-lg">Regenerate</button>
-                        <button onclick="downloadImage('${data.imageUrl}')" class="px-3 py-2 bg-white border rounded-lg">Download</button>
-                        <button onclick="copyPrompt('${escapeJs(prompt)}')" class="px-3 py-2 bg-white border rounded-lg">Copy Prompt</button>
-                        <button onclick="deleteResult(this)" class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">Delete</button>
-                    </div>
-                `;
-                const resultsArea = document.getElementById('resultsArea');
-                resultsArea.insertBefore(result, resultsArea.firstChild);
-
-                if (i < batch - 1) await new Promise(r => setTimeout(r, 500));
-            }
-
-            promptEl.value = '';
-            promptEl.style.height = 'auto';
-        } catch (err) {
-            console.error('Error generating image:', err);
-            alert('Terjadi kesalahan saat menghasilkan gambar. Periksa console untuk detail.');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = prevHtml;
-        }
-    }
-
-    function regenerateImage(prompt, model) {
-        document.getElementById('promptInput').value = prompt;
-        const option = document.querySelector(`[data-model="${model}"]`);
-        if (option) selectModelFromElement(option);
-        generateImage();
-    }
-
-    function downloadImage(url) {
-        if (!url) return;
-        if (url.startsWith('data:')) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `taurus-ai-${Date.now()}.png`;
-            link.click();
-            return;
-        }
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `taurus-ai-${Date.now()}.png`;
-        link.click();
-    }
-
-    function copyPrompt(prompt) {
-        navigator.clipboard.writeText(prompt);
-        alert('Prompt copied!');
-    }
-
-    function deleteResult(btn) {
-        if (confirm('Delete this result?')) btn.closest('.image-result').remove();
-    }
-
-    function clearAllResults() {
-        if (confirm('Clear all results?')) document.getElementById('resultsArea').innerHTML = '';
-    }
-
-    /* -------------------------
-       Keyboard: submit with Enter
-    -------------------------*/
-    document.addEventListener('DOMContentLoaded', () => {
-        // Populate models
-        populateModelDropdown();
-
-        // Hook generate button
-        document.getElementById('generateBtn')?.addEventListener('click', generateImage);
-
-        // Enter to submit when not pressing shift
-        document.getElementById('promptInput')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                generateImage();
-            }
+      const inner = document.getElementById('modelDropdownInner');
+      inner.innerHTML = '<div class="text-xs text-gray-400">Loading models...</div>';
+      try {
+        const resp = await fetch('/api/models');
+        if (!resp.ok) throw new Error('Failed to load models');
+        const data = await resp.json();
+        const models = data.models || [];
+        inner.innerHTML = '';
+        models.forEach((m,i) => {
+          const opt = el('div', { class:'flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-50 cursor-pointer model-option', 'data-model': m.id, 'data-icon': m.icon || '🖼️', 'data-name': m.name || m.id });
+          opt.innerHTML = `<div class="text-xl">${m.icon || '🖼️'}</div><div><div class="text-sm font-medium">${m.name || m.id}</div><div class="text-xs text-gray-500">${m.desc || ''}</div></div>`;
+          opt.addEventListener('click', ()=> selectModelFromElement(opt));
+          inner.appendChild(opt);
+          if (i===0) {
+            document.getElementById('selectedModelName').textContent = m.name || m.id;
+            document.getElementById('selectedModelIcon').textContent = m.icon || '🖼️';
+            document.getElementById('modelDropdown').dataset.selectedModel = m.id;
+          }
         });
+        if (models.length===0) inner.innerHTML = '<div class="text-xs text-gray-400">No models returned from server</div>';
+      } catch (err) {
+        console.warn('Could not fetch models:', err);
+        inner.innerHTML = '<div class="text-xs text-gray-400">Failed to load — using fallback</div>';
+      }
+    }
+    function toggleModelDropdown(){
+      const btn = document.getElementById('modelDropdownButton');
+      const dropdown = document.getElementById('modelDropdown');
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', (!expanded).toString());
+      dropdown.classList.toggle('open');
+    }
+    function selectModelFromElement(el){
+      const model = el.getAttribute('data-model');
+      const icon = el.getAttribute('data-icon') || '🖼️';
+      const name = el.getAttribute('data-name') || model;
+      document.getElementById('selectedModelName').textContent = name;
+      document.getElementById('selectedModelIcon').textContent = icon;
+      document.getElementById('modelDropdown').dataset.selectedModel = model;
+      document.getElementById('modelDropdownButton').setAttribute('aria-expanded','false');
+      document.getElementById('modelDropdown').classList.remove('open');
+    }
+
+    /* results & preview (similar to earlier) */
+    const resultsArea = document.getElementById('resultsArea');
+    const statusSummary = document.getElementById('statusSummary');
+
+    function updateStatusSummary(){
+      const cards = resultsArea.querySelectorAll('.image-card');
+      const total = cards.length;
+      const rendering = resultsArea.querySelectorAll('.image-card[data-status="rendering"]').length;
+      const done = resultsArea.querySelectorAll('.image-card[data-status="done"]').length;
+      const err = resultsArea.querySelectorAll('.image-card[data-status="error"]').length;
+      statusSummary.textContent = `Total: ${total} · Rendering: ${rendering} · Done: ${done} · Error: ${err}`;
+    }
+
+    function createResultCard({ id, prompt, model, seed, width, height }){
+      const card = el('div', { class:'image-card bg-white rounded-lg p-3 border border-gray-100', 'data-id': id, 'data-status': 'rendering' });
+      const header = el('div', { class:'flex items-start justify-between gap-2 mb-2' });
+      const left = el('div', { class:'flex items-start gap-3' });
+      left.appendChild(el('div', { class:'w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-bold' }, 'T'));
+      const meta = el('div', {});
+      meta.appendChild(el('div', { class:'text-sm font-medium' }, (prompt.length>80 ? prompt.slice(0,80)+'…' : prompt)));
+      meta.appendChild(el('div', { class:'text-xs text-gray-500' }, `Model: ${model} · ${width}×${height}`));
+      left.appendChild(meta);
+      header.appendChild(left);
+      const right = el('div', {});
+      right.appendChild(makeStatusPill('rendering'));
+      header.appendChild(right);
+
+      const imgWrap = el('div', { class:'mt-3 bg-gray-50 rounded overflow-hidden flex items-center justify-center', style: 'height:180px' });
+      imgWrap.appendChild(el('div', { class:'text-xs text-gray-400' }, 'Rendering preview…'));
+
+      const actions = el('div', { class:'mt-3 flex items-center gap-2' });
+      const previewBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Preview');
+      const downloadBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Download');
+      const copyBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Copy Prompt');
+      const delBtn = el('button', { class:'px-2 py-1 text-sm bg-red-50 border border-red-200 rounded' }, 'Delete');
+      actions.appendChild(previewBtn); actions.appendChild(downloadBtn); actions.appendChild(copyBtn); actions.appendChild(delBtn);
+
+      card.appendChild(header); card.appendChild(imgWrap); card.appendChild(actions);
+
+      previewBtn.addEventListener('click', ()=> openPreview(card.dataset));
+      downloadBtn.addEventListener('click', ()=> { const url = card.getAttribute('data-imageurl'); if (url) downloadImage(url); else alert('Image not ready'); });
+      copyBtn.addEventListener('click', ()=> { navigator.clipboard.writeText(prompt); alert('Prompt copied'); });
+      delBtn.addEventListener('click', ()=> { if (confirm('Delete this result?')) card.remove(); updateStatusSummary(); });
+
+      function updateReady({ imageUrl, details }){
+        card.setAttribute('data-imageurl', imageUrl);
+        card.setAttribute('data-status', 'done');
+        right.replaceChild(makeStatusPill('done'), right.firstChild);
+        imgWrap.innerHTML = '';
+        const img = el('img', { src: imageUrl, alt: prompt, class:'w-full h-full object-cover cursor-pointer', style: 'max-height:180px' });
+        img.addEventListener('click', ()=> openPreview({ id, prompt, model, seed, width, height, imageUrl, details, time: Date.now(), status: 'done' }));
+        imgWrap.appendChild(img);
+        card.dataset.prompt = prompt; card.dataset.model = model; card.dataset.seed = seed || ''; card.dataset.width = width; card.dataset.height = height; card.dataset.generatedAt = Date.now();
+        updateStatusSummary();
+      }
+
+      function updateError(errMsg){
+        card.setAttribute('data-status', 'error');
+        right.replaceChild(makeStatusPill('error'), right.firstChild);
+        imgWrap.innerHTML = '';
+        imgWrap.appendChild(el('div', { class:'text-xs text-red-600' }, 'Failed to generate'));
+        imgWrap.appendChild(el('div', { class:'text-xs text-gray-500 mt-2' }, errMsg || 'Unknown error'));
+        card.dataset.error = errMsg || '';
+        updateStatusSummary();
+      }
+
+      return { card, updateReady, updateError };
+    }
+
+    function openPreview(data = {}){
+      const modal = document.getElementById('previewModal');
+      document.getElementById('previewImage').src = data.imageUrl || data['imageUrl'] || '';
+      document.getElementById('previewPrompt').textContent = data.prompt || data['prompt'] || '';
+      document.getElementById('previewModelDetail').textContent = data.model || data['model'] || '';
+      document.getElementById('previewSeedDetail').textContent = data.seed || data['seed'] || '—';
+      document.getElementById('previewSizeDetail').textContent = `${data.width || data['width'] || '—'} × ${data.height || data['height'] || '—'}`;
+      document.getElementById('previewTimeDetail').textContent = data.time ? fmtTime(data.time) : (data.generatedAt ? fmtTime(Number(data.generatedAt)) : '—');
+      document.getElementById('previewDetailText').textContent = data.details || data.detail || data.error || '';
+      const statusPill = document.getElementById('previewStatusPill');
+      statusPill.className = 'status-pill ' + ((data.status === 'rendering') ? 'status-rendering' : (data.status === 'error') ? 'status-error' : 'status-done');
+      statusPill.textContent = (data.status === 'rendering') ? 'Rendering' : (data.status === 'error') ? 'Error' : 'Done';
+      document.getElementById('previewModel').textContent = data.model || data['model'] || '';
+      const dBtn = document.getElementById('previewDownloadBtn');
+      dBtn.onclick = () => { if (data.imageUrl) downloadImage(data.imageUrl); else alert('No image to download'); };
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+    function closePreview(){ const modal = document.getElementById('previewModal'); modal.classList.remove('flex'); modal.classList.add('hidden'); }
+    function downloadImage(url){ if (!url) return; const a = document.createElement('a'); a.href = url; a.download = `taurus-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); }
+
+    /* generate flow: keeps prompt in textarea & uses imageRefUrl (if pasted) for image->image */
+    let counter = 0;
+    async function generateImage(){
+      const promptEl = document.getElementById('promptInput');
+      const prompt = (promptEl.value || '').trim();
+      if (!prompt) return alert('Masukkan prompt terlebih dahulu');
+
+      const width = parseInt(document.getElementById('widthInput').value) || 1024;
+      const height = parseInt(document.getElementById('heightInput').value) || 1024;
+      const nologo = document.getElementById('nologoCheck').checked;
+      const enhance = document.getElementById('enhanceCheck').checked;
+      const nsfw = document.getElementById('nsfwToggle').checked;
+      const seed = document.getElementById('seedInput').value || undefined;
+      const model = document.getElementById('modelDropdown').dataset.selectedModel || 'flux';
+      const imageRef = (document.getElementById('imageRefUrl').value || '').trim() || undefined;
+      const batch = parseInt(document.getElementById('batchCount')?.value) || 1;
+
+      // create card(s) placeholders and send requests
+      for (let i=0;i<batch;i++){
+        const id = 'r' + (++counter);
+        const { card, updateReady, updateError } = createResultCard({ id, prompt, model, seed, width, height });
+        resultsArea.insertBefore(card, resultsArea.firstChild);
+        updateStatusSummary();
+
+        const payload = { prompt, model, width, height };
+        if (seed) payload.seed = seed;
+        if (nologo) payload.nologo = true;
+        if (enhance) payload.enhance = true;
+        if (nsfw) payload.nsfw = true;
+        if (imageRef) payload.imageUrl = imageRef; // send to backend for image->image if supported
+
+        try {
+          const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          let data = {};
+          try { data = await response.json(); } catch(e){}
+
+          if (!response.ok || !data || !data.success) {
+            const detail = (data && (data.details || data.error)) ? (data.details || data.error) : `HTTP ${response.status}`;
+            updateError(detail);
+            // also send to /api/logs for collection
+            try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'Generate failed', details: detail }) }); } catch(e){}
+            continue;
+          }
+
+          updateReady({ imageUrl: data.imageUrl, details: data.message || '' });
+          statusSummary.textContent = `Last: ${fmtTime()}`;
+        } catch (err) {
+          updateError(err?.message || String(err));
+          try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'Network generate error', details: String(err) }) }); } catch(e){}
+        }
+      }
+    }
+
+    /* --- image reference preview logic: detect paste or input and show preview --- */
+    const imageRefInput = document.getElementById('imageRefUrl');
+    const imageRefPreviewWrap = document.getElementById('imageRefPreviewWrap');
+    const imageRefPreview = document.getElementById('imageRefPreview');
+    const clearImageRefBtn = document.getElementById('clearImageRef');
+
+    function isLikelyImageUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      try { const u = new URL(url); } catch (e) { return false; }
+      return /\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(url.split('?')[0]);
+    }
+
+    async function tryShowImagePreview(url){
+      if (!url) { imageRefPreviewWrap.classList.add('hidden'); imageRefPreview.src=''; return; }
+      // set tiny thumbnail immediately
+      imageRefPreview.src = url;
+      // test load
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          imageRefPreview.src = url;
+          imageRefPreviewWrap.classList.remove('hidden');
+          resolve(true);
+        };
+        img.onerror = () => {
+          imageRefPreviewWrap.classList.add('hidden');
+          imageRefPreview.src = '';
+          resolve(false);
+        };
+        img.src = url;
+      });
+    }
+
+    imageRefInput.addEventListener('input', (e) => {
+      const v = (e.target.value || '').trim();
+      if (isLikelyImageUrl(v)) tryShowImagePreview(v);
+      else { imageRefPreviewWrap.classList.add('hidden'); imageRefPreview.src = ''; }
     });
-    </script>
+
+    // handle paste anywhere: if clipboardText is an image url, auto-fill the imageRefUrl input and preview
+    document.addEventListener('paste', (ev) => {
+      const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
+      if (isLikelyImageUrl(text)) {
+        ev.preventDefault();
+        imageRefInput.value = text;
+        tryShowImagePreview(text);
+      }
+    });
+
+    clearImageRefBtn.addEventListener('click', () => {
+      imageRefInput.value = '';
+      imageRefPreviewWrap.classList.add('hidden');
+      imageRefPreview.src = '';
+    });
+
+    /* init */
+    document.addEventListener('DOMContentLoaded', () => {
+      populateModelDropdown().catch(()=>{});
+      document.getElementById('generateBtn').addEventListener('click', generateImage);
+      document.getElementById('promptInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          generateImage();
+        }
+      });
+      // ensure batchCount element exists (hidden) to keep compatibility
+      if (!document.getElementById('batchCount')) {
+        const bc = document.createElement('input');
+        bc.type = 'number'; bc.id = 'batchCount'; bc.value = '1'; bc.min = '1'; bc.max = '4'; bc.style.display='none';
+        document.body.appendChild(bc);
+      }
+    });
+
+    // close preview when clicking backdrop
+    document.getElementById('previewModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('previewModal') || e.target.classList.contains('modal-backdrop')) closePreview();
+    });
+  </script>
 </body>
 </html>
