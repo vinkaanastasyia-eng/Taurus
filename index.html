@@ -313,390 +313,153 @@
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30" onclick="closeSidebars()"></div>
 
     <script>
-        let selectedModel = 'flux';
-        let selectedModelIcon = '⚡';
-        let selectedModelName = 'Flux';
-        let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
-        let currentFocusedIndex = -1;
-
-        const stylePresets = {
-            'realistic': 'photorealistic, highly detailed, professional photography, 8k uhd',
-            'anime': 'anime style, manga, cel shaded, vibrant colors',
-            'oil-painting': 'oil painting, classical art, brush strokes, artistic',
-            'watercolor': 'watercolor painting, soft colors, artistic',
-            'cyberpunk': 'cyberpunk style, neon lights, futuristic, sci-fi',
-            '3d-render': '3d render, cgi, unreal engine, octane render'
-        };
-
-        if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
-        updateHistoryList();
-
-        document.getElementById('promptInput').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-        });
-
-        // Keyboard-accessible dropdown functions
-        function toggleModelDropdown() {
-            const dropdown = document.getElementById('modelDropdown');
-            const button = document.getElementById('modelDropdownButton');
-            const arrow = document.getElementById('dropdownArrow');
-            const isOpen = dropdown.classList.contains('open');
-
-            if (!isOpen) {
-                dropdown.classList.add('open');
-                button.setAttribute('aria-expanded', 'true');
-                arrow.style.transform = 'rotate(180deg)';
-                
-                // Focus first selected option or first option
-                const selectedOption = dropdown.querySelector('[aria-selected="true"]');
-                const firstOption = dropdown.querySelector('[role="option"]');
-                const optionToFocus = selectedOption || firstOption;
-                
-                if (optionToFocus) {
-                    setTimeout(() => {
-                        optionToFocus.focus();
-                        currentFocusedIndex = Array.from(dropdown.querySelectorAll('[role="option"]')).indexOf(optionToFocus);
-                    }, 100);
-                }
-            } else {
-                closeDropdown();
-            }
-        }
-
-        function closeDropdown() {
-            const dropdown = document.getElementById('modelDropdown');
-            const button = document.getElementById('modelDropdownButton');
-            const arrow = document.getElementById('dropdownArrow');
-            
-            dropdown.classList.remove('open');
-            button.setAttribute('aria-expanded', 'false');
-            arrow.style.transform = '';
-            currentFocusedIndex = -1;
-            
-            // Remove focused class from all options
-            dropdown.querySelectorAll('.model-option').forEach(opt => {
-                opt.classList.remove('focused');
-            });
-        }
-
-        function handleDropdownButtonKeydown(event) {
-            const dropdown = document.getElementById('modelDropdown');
-            const isOpen = dropdown.classList.contains('open');
-
-            switch(event.key) {
-                case 'Enter':
-                case ' ':
-                case 'ArrowDown':
-                case 'ArrowUp':
-                    event.preventDefault();
-                    if (!isOpen) {
-                        toggleModelDropdown();
-                    }
-                    break;
-                case 'Escape':
-                    if (isOpen) {
-                        event.preventDefault();
-                        closeDropdown();
-                        document.getElementById('modelDropdownButton').focus();
-                    }
-                    break;
-            }
-        }
-
-        function handleOptionKeydown(event) {
-            const dropdown = document.getElementById('modelDropdown');
-            const options = Array.from(dropdown.querySelectorAll('[role="option"]'));
-            const currentOption = event.target.closest('[role="option"]');
-            currentFocusedIndex = options.indexOf(currentOption);
-
-            switch(event.key) {
-                case 'Enter':
-                case ' ':
-                    event.preventDefault();
-                    selectModelFromElement(currentOption);
-                    closeDropdown();
-                    document.getElementById('modelDropdownButton').focus();
-                    break;
-                    
-                case 'ArrowDown':
-                    event.preventDefault();
-                    currentFocusedIndex = (currentFocusedIndex + 1) % options.length;
-                    focusOption(options[currentFocusedIndex]);
-                    break;
-                    
-                case 'ArrowUp':
-                    event.preventDefault();
-                    currentFocusedIndex = currentFocusedIndex <= 0 ? options.length - 1 : currentFocusedIndex - 1;
-                    focusOption(options[currentFocusedIndex]);
-                    break;
-                    
-                case 'Home':
-                    event.preventDefault();
-                    currentFocusedIndex = 0;
-                    focusOption(options[0]);
-                    break;
-                    
-                case 'End':
-                    event.preventDefault();
-                    currentFocusedIndex = options.length - 1;
-                    focusOption(options[currentFocusedIndex]);
-                    break;
-                    
-                case 'Escape':
-                    event.preventDefault();
-                    closeDropdown();
-                    document.getElementById('modelDropdownButton').focus();
-                    break;
-                    
-                case 'Tab':
-                    closeDropdown();
-                    break;
-            }
-        }
-
-        function focusOption(option) {
-            const dropdown = document.getElementById('modelDropdown');
-            
-            // Remove focused class from all options
-            dropdown.querySelectorAll('.model-option').forEach(opt => {
-                opt.classList.remove('focused');
-            });
-            
-            // Add focused class and focus the option
-            option.classList.add('focused');
-            option.focus();
-            
-            // Scroll into view if needed
-            option.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-
-        function selectModelFromClick(element) {
-            selectModelFromElement(element);
-        }
-
-        function selectModelFromElement(element) {
-            const model = element.dataset.model;
-            const icon = element.dataset.icon;
-            const name = element.dataset.name;
-
-            selectedModel = model;
-            selectedModelIcon = icon;
-            selectedModelName = name;
-
-            document.getElementById('selectedModelIcon').textContent = icon;
-            document.getElementById('selectedModelName').textContent = name;
-
-            // Update aria-selected attributes
-            const dropdown = document.getElementById('modelDropdown');
-            dropdown.querySelectorAll('[role="option"]').forEach(opt => {
-                opt.setAttribute('aria-selected', 'false');
-                opt.classList.remove('selected');
-                const check = opt.querySelector('.model-check');
-                if (check) check.classList.add('hidden');
-            });
-
-            element.setAttribute('aria-selected', 'true');
-            element.classList.add('selected');
-            const check = element.querySelector('.model-check');
-            if (check) check.classList.remove('hidden');
-
-            closeDropdown();
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('modelDropdown');
-            const button = document.getElementById('modelDropdownButton');
-            
-            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                if (dropdown.classList.contains('open')) {
-                    closeDropdown();
-                }
-            }
-        });
-
-        async function generateImage() {
-            const prompt = document.getElementById('promptInput').value.trim();
-            if (!prompt) return alert('Enter a prompt');
-
-            const btn = document.getElementById('generateBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading"></div>';
-
-            const emptyState = document.getElementById('emptyState');
-            emptyState.style.display = 'none';
-
-            try {
-                const width = document.getElementById('widthInput').value;
-                const height = document.getElementById('heightInput').value;
-                const batch = parseInt(document.getElementById('batchCount').value);
-                const nsfw = document.getElementById('nsfwToggle').checked;
-                const enhance = document.getElementById('enhanceCheck').checked;
-                const nologo = document.getElementById('nologoCheck').checked;
-                const imageRef = document.getElementById('imageRefUrl').value.trim();
-
-                addToHistory(prompt);
-
-                for (let i = 0; i < batch; i++) {
-                    let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-                    url += `?model=${selectedModel}&width=${width}&height=${height}`;
-                    if (enhance) url += '&enhance=true';
-                    if (nologo) url += '&nologo=true';
-                    if (!nsfw) url += '&safe=true';
-                    if (imageRef && selectedModel === 'kontext') url += `&image=${encodeURIComponent(imageRef)}`;
-
-                    const result = document.createElement('div');
-                    result.className = 'image-result mb-6 p-6 bg-gray-50 rounded-2xl';
-                    result.innerHTML = `
-                        <div class="flex gap-4 mb-3">
-                            <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">T</div>
-                            <div class="flex-1">
-                                <div class="text-sm text-gray-500 mb-1">You</div>
-                                <div class="text-base">${prompt}</div>
-                            </div>
-                        </div>
-                        <div class="ml-12 relative group">
-                            <img src="${url}" alt="${prompt}" class="w-full rounded-xl shadow-lg" loading="lazy"/>
-                            <div class="image-actions absolute top-3 right-3 flex gap-2">
-                                <button onclick='regenerateImage("${prompt.replace(/"/g, '&quot;')}", "${selectedModel}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Regenerate image">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                </button>
-                                <button onclick='downloadImage("${url}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Download image">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                </button>
-                                <button onclick='copyPrompt("${prompt.replace(/"/g, '&quot;')}")' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Copy prompt">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                                </button>
-                                <button onclick='deleteResult(this)' class="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100" aria-label="Delete result">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-
-                    document.getElementById('resultsArea').insertBefore(result, document.getElementById('resultsArea').firstChild);
-                    if (i < batch - 1) await new Promise(resolve => setTimeout(resolve, 500));
-                }
-
-                document.getElementById('promptInput').value = '';
-                document.getElementById('promptInput').style.height = 'auto';
-
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16346272 C3.34915502,0.9 2.40734225,1.00636533 1.77946707,1.4776575 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99021575 L3.03521743,10.4311088 C3.03521743,10.5882061 3.34915502,10.7453035 3.50612381,10.7453035 L16.6915026,11.5307905 C16.6915026,11.5307905 17.1624089,11.5307905 17.1624089,12.0020827 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/></svg>';
-            }
-        }
-
-        function regenerateImage(prompt, model) {
-            document.getElementById('promptInput').value = prompt;
-            const option = document.querySelector(`[data-model="${model}"]`);
-            if (option) selectModelFromElement(option);
+    // Event listener: Enter untuk submit
+    document.getElementById('promptInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             generateImage();
         }
+    });
 
-        function downloadImage(url) {
+    async function generateImage() {
+        const prompt = document.getElementById('promptInput').value.trim();
+        if (!prompt) return alert('Masukkan prompt terlebih dahulu');
+
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading"></div>';
+
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.style.display = 'none';
+
+        try {
+            const width = parseInt(document.getElementById('widthInput').value) || 1024;
+            const height = parseInt(document.getElementById('heightInput').value) || 1024;
+            const batch = parseInt(document.getElementById('batchCount').value) || 1;
+            const nsfw = document.getElementById('nsfwToggle').checked;
+            const enhance = document.getElementById('enhanceCheck').checked;
+            const nologo = document.getElementById('nologoCheck').checked;
+            const imageRef = document.getElementById('imageRefUrl').value.trim();
+            const option = document.querySelector('.model-option.selected') || document.querySelector('[data-model="flux"]');
+            const selectedModel = option ? option.getAttribute('data-model') : 'flux';
+
+            addToHistory(prompt);
+
+            for (let i = 0; i < batch; i++) {
+                // Panggil backend endpoint /api/generate
+                const payload = {
+                    prompt,
+                    imageUrl: imageRef || undefined,
+                    model: selectedModel,
+                    width,
+                    height,
+                    seed: document.getElementById('seedInput').value || undefined,
+                    nologo: nologo || undefined,
+                    enhance: enhance || undefined,
+                    nsfw: nsfw || undefined
+                };
+
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    const details = (data && data.details) ? data.details : (data && data.error) ? data.error : 'Unknown error';
+                    alert('Gagal menghasilkan gambar: ' + details);
+                    break;
+                }
+
+                const result = document.createElement('div');
+                result.className = 'image-result mb-6 p-6 bg-gray-50 rounded-2xl';
+                result.innerHTML = `
+                    <div class="flex gap-4 mb-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">T</div>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-500 mb-1">You</div>
+                            <div class="text-base">${escapeHtml(prompt)}</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <img src="${data.imageUrl}" alt="${escapeHtml(prompt)}" class="w-full rounded-lg" />
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="regenerateImage('${escapeJs(prompt)}', '${selectedModel}')" class="px-3 py-2 bg-white border rounded-lg">Regenerate</button>
+                        <button onclick="downloadImage('${data.imageUrl}')" class="px-3 py-2 bg-white border rounded-lg">Download</button>
+                        <button onclick="copyPrompt('${escapeJs(prompt)}')" class="px-3 py-2 bg-white border rounded-lg">Copy Prompt</button>
+                        <button onclick="deleteResult(this)" class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">Delete</button>
+                    </div>
+                `;
+
+                const resultsArea = document.getElementById('resultsArea');
+                resultsArea.insertBefore(result, resultsArea.firstChild);
+
+                if (i < batch - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            document.getElementById('promptInput').value = '';
+            document.getElementById('promptInput').style.height = 'auto';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16346272 C3.34915502,0.9 2.40734225,1.00636533 1.77946707,1.4776575 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99021575 L3.03521743,10.4311088 C3.03521743,10.5882061 3.34915502,10.7453035 3.50612381,10.7453035 L16.6915026,11.5307905 C16.6915026,11.5307905 17.1624089,11.5307905 17.1624089,12.0020827 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/></svg>';
+        }
+    }
+
+    function regenerateImage(prompt, model) {
+        document.getElementById('promptInput').value = prompt;
+        const option = document.querySelector(`[data-model="${model}"]`);
+        if (option) selectModelFromElement(option);
+        generateImage();
+    }
+
+    function downloadImage(url) {
+        // Support data URLs and remote URLs
+        if (url.startsWith('data:')) {
             const link = document.createElement('a');
             link.href = url;
             link.download = `taurus-ai-${Date.now()}.png`;
             link.click();
+            return;
         }
+        // fallback for remote URLs
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `taurus-ai-${Date.now()}.png`;
+        link.click();
+    }
 
-        function copyPrompt(prompt) {
-            navigator.clipboard.writeText(prompt);
-            alert('Prompt copied!');
-        }
+    function copyPrompt(prompt) {
+        navigator.clipboard.writeText(prompt);
+        alert('Prompt copied!');
+    }
 
-        function deleteResult(btn) {
-            if (confirm('Delete this result?')) btn.closest('.image-result').remove();
-        }
+    function deleteResult(btn) {
+        if (confirm('Delete this result?')) btn.closest('.image-result').remove();
+    }
 
-        function clearAllResults() {
-            if (confirm('Clear all results?')) document.getElementById('resultsArea').innerHTML = '';
-        }
+    function clearAllResults() {
+        if (confirm('Clear all results?')) document.getElementById('resultsArea').innerHTML = '';
+    }
 
-        function toggleSettings() {
-            document.getElementById('settingsSidebar').classList.toggle('translate-x-full');
-        }
-
-        function toggleHistory() {
-            document.getElementById('historySidebar').classList.toggle('translate-x-full');
-        }
-
-        function toggleStylePresets() {
-            document.getElementById('stylePresetsPanel').classList.toggle('hidden');
-        }
-
-        function toggleImageReference() {
-            document.getElementById('imageReferencePanel').classList.toggle('hidden');
-        }
-
-        function applyStyle(style) {
-            const input = document.getElementById('promptInput');
-            const text = stylePresets[style];
-            if (text && !input.value.includes(text)) {
-                input.value = input.value.trim() ? input.value + ', ' + text : text;
-                input.dispatchEvent(new Event('input'));
-            }
-        }
-
-        function toggleTheme() {
-            document.documentElement.classList.toggle('dark');
-            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        }
-
-        function setSize(w, h) {
-            document.getElementById('widthInput').value = w;
-            document.getElementById('heightInput').value = h;
-        }
-
-        function randomSeed() {
-            document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
-        }
-
-        function addToHistory(prompt) {
-            if (!promptHistory.includes(prompt)) {
-                promptHistory.unshift(prompt);
-                if (promptHistory.length > 20) promptHistory.pop();
-                localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
-                updateHistoryList();
-            }
-        }
-
-        function updateHistoryList() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            promptHistory.forEach(prompt => {
-                const item = document.createElement('div');
-                item.className = 'p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100';
-                item.textContent = prompt.substring(0, 80) + (prompt.length > 80 ? '...' : '');
-                item.onclick = () => {
-                    document.getElementById('promptInput').value = prompt;
-                    toggleHistory();
-                };
-                list.appendChild(item);
-            });
-        }
-
-        function clearHistory() {
-            if (confirm('Clear all history?')) {
-                promptHistory = [];
-                localStorage.removeItem('promptHistory');
-                updateHistoryList();
-            }
-        }
-
-        function closeSidebars() {
-            document.getElementById('settingsSidebar').classList.add('translate-x-full');
-            document.getElementById('historySidebar').classList.add('translate-x-full');
-        }
-
-        document.getElementById('promptInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                generateImage();
-            }
-        });
-    </script>
+    // Simple helpers for safety
+    function escapeHtml(unsafe) {
+        return unsafe
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+    }
+    function escapeJs(s) {
+        return s.replaceAll('\\', '\\\\').replaceAll("'", "\\'").replaceAll("\n", "\\n").replaceAll("\r", "");
+    }
+</script>
 </body>
 </html>
+
