@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Only accept POST for generation (GET can be used for health check)
   if (req.method === 'GET') {
     return res.status(200).json({ ok: true, message: 'Generate endpoint (POST) available' });
   }
@@ -26,13 +25,12 @@ export default async function handler(req, res) {
     }
 
     // Build allowed model list (default + optional EXTRA_MODELS env var)
-    const DEFAULT_MODELS = ['flux', 'turbo', 'flux-realism', 'realism', 'stable'];
+    const DEFAULT_MODELS = ['flux', 'turbo', 'flux-realism', 'realism', 'stable', 'kontext'];
     const extra = (process.env.EXTRA_MODELS || '').split(',').map(s => s.trim()).filter(Boolean);
     const allowedModels = Array.from(new Set(DEFAULT_MODELS.concat(extra)));
 
     const selectedModel = model || 'flux';
     if (!allowedModels.includes(selectedModel)) {
-      // Return helpful error so frontend can show a proper message
       return res.status(400).json({
         error: 'Invalid model',
         details: `Model '${selectedModel}' is not available on this instance. Allowed: ${allowedModels.join(', ')}`
@@ -41,6 +39,14 @@ export default async function handler(req, res) {
 
     // Use server-side API key if provided (set in environment: POLLINATIONS_API_KEY)
     const apiToken = process.env.POLLINATIONS_API_KEY || null;
+
+    // IMPORTANT: kontext (img2img) requires authentication on Pollinations
+    if (selectedModel === 'kontext' && !apiToken) {
+      return res.status(403).json({
+        error: 'Model requires authentication',
+        details: "The 'kontext' (img2img) model requires a Pollinations API key (seed tier or higher). Visit https://auth.pollinations.ai to get a token, then set POLLINATIONS_API_KEY in your environment (e.g., Vercel dashboard or .env)."
+      });
+    }
 
     // Build request to Pollinations API
     const pollinationsUrl = new URL('https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt));
@@ -57,6 +63,8 @@ export default async function handler(req, res) {
     if (!nsfw) params.safe = true; // safe mode if nsfw is disabled
 
     if (imageUrl) {
+      // For kontext, it's better if server inlines the image (optional) — the robust handling
+      // can be left in place (fetch, convert to data URL) as before. Here we let backend try to attach image param.
       params.image = imageUrl;
     }
 
@@ -81,8 +89,7 @@ export default async function handler(req, res) {
       let details = '';
       try { details = await response.text(); } catch (_) { details = `status ${response.status}`; }
 
-      // Log full URL without exposing secret tokens
-      console.error(`Pollinations API error: ${response.status} - ${details} (url=${pollinationsUrl.origin}${pollinationsUrl.pathname} params=${Array.from(pollinationsUrl.searchParams).map(p=>p.join('=')).join('&')})`);
+      console.error(`Pollinations API error: ${response.status} - ${details} (model=${selectedModel})`);
 
       return res.status(response.status).json({
         error: 'Pollinations API error',
@@ -98,7 +105,6 @@ export default async function handler(req, res) {
     const base64 = buffer.toString('base64');
     const dataUrl = `data:${contentType};base64,${base64}`;
 
-    // Return image data URL
     return res.status(200).json({
       success: true,
       imageUrl: dataUrl,
@@ -107,7 +113,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error in /api/generate:', error);
-    // Return minimal error to client but include details for debugging
     return res.status(500).json({
       error: 'Failed to generate image',
       details: error && error.message ? error.message : String(error)
