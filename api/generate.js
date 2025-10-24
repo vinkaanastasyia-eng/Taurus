@@ -3,13 +3,17 @@
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Only accept POST for generation (GET can be used for health check)
+  if (req.method === 'GET') {
+    return res.status(200).json({ ok: true, message: 'Generate endpoint (POST) available' });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -21,6 +25,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
+    // Build allowed model list (default + optional EXTRA_MODELS env var)
+    const DEFAULT_MODELS = ['flux', 'turbo', 'flux-realism', 'realism', 'stable'];
+    const extra = (process.env.EXTRA_MODELS || '').split(',').map(s => s.trim()).filter(Boolean);
+    const allowedModels = Array.from(new Set(DEFAULT_MODELS.concat(extra)));
+
+    const selectedModel = model || 'flux';
+    if (!allowedModels.includes(selectedModel)) {
+      // Return helpful error so frontend can show a proper message
+      return res.status(400).json({
+        error: 'Invalid model',
+        details: `Model '${selectedModel}' is not available on this instance. Allowed: ${allowedModels.join(', ')}`
+      });
+    }
+
     // Use server-side API key if provided (set in environment: POLLINATIONS_API_KEY)
     const apiToken = process.env.POLLINATIONS_API_KEY || null;
 
@@ -28,7 +46,7 @@ export default async function handler(req, res) {
     const pollinationsUrl = new URL('https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt));
 
     const params = {
-      model: model || 'flux',
+      model: selectedModel,
       width: width || 1024,
       height: height || 1024,
     };
@@ -62,7 +80,15 @@ export default async function handler(req, res) {
       // Try to extract error text for diagnostics
       let details = '';
       try { details = await response.text(); } catch (_) { details = `status ${response.status}`; }
-      throw new Error(`Pollinations API error: ${response.status} - ${details}`);
+
+      // Log full URL without exposing secret tokens
+      console.error(`Pollinations API error: ${response.status} - ${details} (url=${pollinationsUrl.origin}${pollinationsUrl.pathname} params=${Array.from(pollinationsUrl.searchParams).map(p=>p.join('=')).join('&')})`);
+
+      return res.status(response.status).json({
+        error: 'Pollinations API error',
+        status: response.status,
+        details: details
+      });
     }
 
     // Read image buffer and convert to base64 data URL so frontend can display it directly
@@ -81,9 +107,10 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error in /api/generate:', error);
+    // Return minimal error to client but include details for debugging
     return res.status(500).json({
       error: 'Failed to generate image',
-      details: error.message
+      details: error && error.message ? error.message : String(error)
     });
   }
 }
