@@ -8,122 +8,167 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-    .loading { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display:inline-block; vertical-align:middle; }
+    .loading { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display:inline-block; vertical-align:middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Layout */
+    .left-col { min-width: 320px; max-width: 380px; }
+    main { min-width: 0; } /* allow flex shrink */
+
+    /* Model dropdown */
+    .model-option { transition: background-color .12s; }
+    .model-option:hover { background-color: rgba(0,0,0,0.04); }
+
+    /* Compact result cards - takes less space */
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
     .image-card { transition: transform .12s, box-shadow .12s; }
-    .image-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .scrollable { overflow: auto; }
-    .model-dropdown { max-height: 0; overflow: hidden; transition: max-height .18s ease; }
-    .model-dropdown.open { max-height: 420px; }
+    .image-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+
+    .image-thumb { width:100%; height:120px; object-fit:cover; border-radius:8px; display:block; }
+
+    /* Preview modal */
     .modal-backdrop { background: rgba(0,0,0,.6); }
     .status-pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; display:inline-flex; align-items:center; gap:6px; }
-    .status-rendering { background: #fff7ed; color: #92400e; border: 1px solid #fde3bf; }
-    .status-done { background: #ecfdf5; color: #065f46; border: 1px solid #bbf7d0; }
-    .status-error { background: #fff1f2; color: #9f1239; border: 1px solid #fecaca; }
-    textarea { resize: none; }
-    .left-col { min-width: 300px; max-width: 360px; }
-    .image-preview-small { max-width: 100%; max-height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .status-rendering { background: #fff7ed; color:#92400e; border:1px solid #fde3bf; }
+    .status-done { background: #ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
+    .status-error { background: #fff1f2; color:#9f1239; border:1px solid #fecaca; }
+
+    /* small UI */
+    .small-txt { font-size: 12px; color: #4b5563; }
+
+    /* silhouette icons container */
+    .silhouette { width: 28px; height: 28px; display:inline-block; vertical-align:middle; }
+
+    /* image reference preview */
+    .image-preview-small { width:80px; height:56px; object-fit:cover; border-radius:6px; border:1px solid #e5e7eb; }
+
+    /* helpers */
+    .muted { color:#6b7280; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <div class="min-h-screen flex">
-    <!-- Left sidebar (settings persistent) -->
+    <!-- Left sidebar -->
     <aside class="left-col bg-white border-r border-gray-200 p-4 flex flex-col gap-4">
+      <!-- Logo + title (silhouette logo) -->
       <div class="flex items-center gap-3">
-        <svg class="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20.5 7c..."/></svg>
+        <!-- Unique silhouette logo (simple leaf/burst) -->
+        <svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2c2 2 6 3 8 5s3 6 1 8-6 3-8 5-6-3-8-5-1-6 1-8 6-3 8-5z" fill="#111827"/>
+        </svg>
         <div>
-          <h1 class="text-lg font-semibold">Taurus AI</h1>
-          <div class="text-xs text-gray-500">Gen image · Local UI</div>
+          <div class="text-lg font-semibold">Taurus AI</div>
+          <div class="small-txt">Image generation • compact UI</div>
         </div>
       </div>
 
+      <!-- Model selector -->
       <div class="border-t border-gray-100 pt-3">
         <label class="text-xs text-gray-600">Model</label>
         <div class="relative mt-2">
           <button id="modelDropdownButton" aria-haspopup="listbox" aria-expanded="false" class="w-full text-left px-3 py-2 bg-gray-100 rounded-lg flex items-center justify-between" onclick="toggleModelDropdown()">
             <div class="flex items-center gap-2">
-              <span id="selectedModelIcon">⚡</span>
+              <span id="selectedModelIcon" class="silhouette" aria-hidden="true"></span>
               <span id="selectedModelName" class="font-medium text-sm">Flux</span>
             </div>
             <svg class="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
           </button>
 
-          <div id="modelDropdown" class="model-dropdown mt-2 absolute left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-sm z-30">
-            <div class="p-2" id="modelDropdownInner">
-              <div class="text-xs text-gray-400">Loading models...</div>
+          <div id="modelDropdown" class="model-dropdown mt-2 absolute left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-sm z-30 hidden" role="listbox">
+            <div class="p-2" id="modelDropdownInner"></div>
+          </div>
+
+          <div id="modelAuthWarning" class="mt-2 text-xs text-red-600 hidden"></div>
+        </div>
+      </div>
+
+      <!-- Prompt -->
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-xs text-gray-600">Prompt</label>
+        <textarea id="promptInput" rows="3" class="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50" placeholder="Describe the image you want (keeps content while generating)"></textarea>
+      </div>
+
+      <!-- Aspect ratio + size -->
+      <div class="border-t border-gray-100 pt-3">
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-600">Aspect & Size</label>
+          <div class="small-txt" id="detectedAspectLabel">Auto</div>
+        </div>
+
+        <div class="mt-2 flex gap-2">
+          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(1,1)">1:1</button>
+          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(16,9)">16:9</button>
+          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(9,16)">9:16</button>
+          <button class="px-2 py-1 text-xs bg-gray-100 rounded" onclick="setPresetAspect(3,2)">3:2</button>
+          <button id="useImgAspectBtn" class="px-2 py-1 text-xs bg-white border rounded hidden">Use ref aspect</button>
+        </div>
+
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="widthInput" type="number" value="1024" min="128" max="4096" step="1" class="px-2 py-2 rounded-lg border border-gray-200 text-sm" placeholder="Width">
+          <input id="heightInput" type="number" value="1024" min="128" max="4096" step="1" class="px-2 py-2 rounded-lg border border-gray-200 text-sm" placeholder="Height">
+        </div>
+      </div>
+
+      <!-- Image reference (only visible when kontext selected) -->
+      <div class="border-t border-gray-100 pt-3" id="imageRefSection" style="display:none;">
+        <label class="text-xs text-gray-600">Image reference (paste URL)</label>
+
+        <div class="mt-2 flex gap-2 items-center">
+          <input id="imageRefUrl" type="url" placeholder="Paste image URL (img2img)" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+          <button id="addImageRefBtn" class="px-2 py-2 bg-blue-600 text-white rounded-lg hidden">Add</button>
+        </div>
+
+        <div id="imageRefPreviewWrap" class="mt-2 hidden">
+          <div class="flex items-center gap-2">
+            <img id="imageRefPreview" src="" alt="preview" class="image-preview-small" />
+            <div class="text-xs text-gray-500">
+              <div id="imageRefInfo">Reference preview</div>
+              <div class="muted" id="imageRefSize"></div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Seed + controls -->
       <div class="border-t border-gray-100 pt-3">
-        <label class="text-xs text-gray-600">Prompt</label>
-        <textarea id="promptInput" rows="3" class="w-full mt-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50" placeholder="Describe the image you want (keep it here while generating)"></textarea>
-
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <input id="widthInput" type="number" value="1024" min="256" max="2048" step="64" class="px-2 py-2 rounded-lg border border-gray-200 text-sm">
-          <input id="heightInput" type="number" value="1024" min="256" max="2048" step="64" class="px-2 py-2 rounded-lg border border-gray-200 text-sm">
+        <label class="text-xs text-gray-600">Seed</label>
+        <div class="mt-2 flex items-center gap-2">
+          <input id="seedInput" type="number" placeholder="Random" class="flex-1 px-2 py-2 rounded-lg border border-gray-200 text-sm" />
+          <button id="randomSeedBtn" class="px-2 py-2 bg-gray-100 rounded">🎲</button>
         </div>
-
-        <div class="mt-3 flex gap-2 items-center">
-          <label class="text-sm flex items-center gap-2"><input id="nologoCheck" type="checkbox" checked> No logo</label>
-          <label class="text-sm flex items-center gap-2"><input id="enhanceCheck" type="checkbox"> Enhance</label>
+        <div class="mt-2 flex items-center gap-2 small-txt">
+          <label class="flex items-center gap-2"><input id="lockSeed" type="checkbox" /> Lock seed</label>
+          <div class="ml-auto muted">If locked, same seed used across batches</div>
         </div>
+      </div>
 
-        <div class="mt-3 flex gap-2 items-center">
-          <label class="text-sm flex items-center gap-2 text-red-600"><input id="nsfwToggle" type="checkbox"> NSFW</label>
-          <input id="seedInput" type="number" placeholder="seed" class="ml-auto px-2 py-2 rounded-lg border border-gray-200 text-sm w-28" />
-        </div>
-
-        <div class="mt-3">
-          <label class="text-xs text-gray-600">Image reference (paste URL to preview)</label>
-          <div class="mt-2 flex gap-2 items-center">
-            <input id="imageRefUrl" type="url" placeholder="Paste image URL (img2img)" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
-            <button id="clearImageRef" class="px-2 py-2 bg-gray-100 rounded-lg">Clear</button>
-          </div>
-          <div id="imageRefPreviewWrap" class="mt-2 hidden">
-            <div class="flex items-center gap-2">
-              <img id="imageRefPreview" src="" alt="preview" class="image-preview-small" />
-              <div class="text-xs text-gray-500">Reference preview — will be used for image→image if model supports it</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-4 flex gap-2">
+      <!-- Generate -->
+      <div class="mt-4">
+        <div class="flex gap-2">
           <button id="generateBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg">Generate</button>
-          <button onclick="randomSeed()" title="Random seed" class="px-3 py-2 bg-gray-100 rounded-lg">🎲</button>
+          <button id="clearAllBtn" class="px-3 py-2 bg-gray-100 rounded-lg">Clear</button>
         </div>
-
-        <div class="mt-4 text-xs text-gray-500">
-          <div>Settings are persistent on this left sidebar.</div>
-          <div>Use the model dropdown to select available models from the server. Select a kontext (Img2Img) model to enable image→image.</div>
-        </div>
+        <div class="mt-2 text-xs text-gray-500">Tip: paste a public image URL and click Add when using Kontext.</div>
       </div>
 
       <div class="mt-auto text-xs text-gray-400">
         <div>Version: local</div>
-        <div class="mt-2">Errors are sent to /api/logs and visible in your platform logs.</div>
+        <div class="mt-2">You can store session key in Settings & test key validity.</div>
       </div>
     </aside>
 
-    <!-- Main content area -->
+    <!-- Main content -->
     <main class="flex-1 p-6 flex flex-col gap-6">
       <header class="flex items-center justify-between">
         <div>
           <h2 class="text-lg font-semibold">Generated images</h2>
-          <p class="text-sm text-gray-500">Results are shown below — scroll, preview, download, or re-generate.</p>
+          <p class="text-sm text-gray-500">Compact grid — click a thumbnail to preview details.</p>
         </div>
-        <div class="flex items-center gap-3">
-          <div id="statusSummary" class="text-sm text-gray-600">Idle</div>
-        </div>
+        <div class="text-sm text-gray-600" id="statusSummary">Idle</div>
       </header>
 
-      <section id="resultsWrapper" class="flex-1 bg-transparent overflow-hidden">
-        <div id="resultsArea" class="results-grid scrollable p-2 h-full" style="height: calc(100% - 8px);">
-          <!-- cards will appear here -->
-        </div>
+      <section id="resultsWrapper" class="flex-1 overflow-hidden">
+        <div id="resultsArea" class="results-grid scrollable p-2 h-full" style="height: calc(100% - 8px);"></div>
       </section>
     </main>
   </div>
@@ -142,14 +187,13 @@
           <button onclick="closePreview()" class="px-3 py-1.5 bg-red-50 text-red-600 rounded">Close</button>
         </div>
       </div>
-      <div class="p-4 grid grid-cols-2 gap-4">
-        <div class="col-span-2 md:col-span-1 flex items-center justify-center bg-gray-50 p-4">
+      <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex items-center justify-center bg-gray-50 p-4">
           <img id="previewImage" src="" alt="Preview" class="max-h-[60vh] object-contain w-full" />
         </div>
-        <div class="col-span-2 md:col-span-1">
+        <div>
           <h3 class="font-medium text-sm mb-2">Prompt</h3>
           <pre id="previewPrompt" class="bg-gray-50 rounded p-2 text-sm text-gray-700 whitespace-pre-wrap"></pre>
-
           <div class="mt-4 text-sm text-gray-600">
             <div><strong>Model:</strong> <span id="previewModelDetail"></span></div>
             <div class="mt-2"><strong>Seed:</strong> <span id="previewSeedDetail"></span></div>
@@ -162,292 +206,415 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script>
-    /* helpers (same as earlier) */
-    function el(tag, props = {}, ...children) {
-      const node = document.createElement(tag);
-      Object.entries(props).forEach(([k,v]) => {
-        if (k === 'class') node.className = v;
-        else if (k.startsWith('data-')) node.setAttribute(k, v);
-        else node[k] = v;
-      });
-      children.forEach(ch => { if (typeof ch === 'string') node.appendChild(document.createTextNode(ch)); else if (ch) node.appendChild(ch); });
-      return node;
-    }
-    function fmtTime(ts = Date.now()){ return new Date(ts).toLocaleString(); }
-    function makeStatusPill(status){ const span = el('span', { class: 'status-pill ' + (status === 'rendering' ? 'status-rendering' : status === 'done' ? 'status-done' : 'status-error') }); if (status==='rendering') span.innerHTML = '<span class="loading"></span><span>Rendering</span>'; else if (status==='done') span.textContent='Done'; else span.textContent='Error'; return span; }
+<script>
+/* -------------------------
+   Helpers & UI state
+-------------------------*/
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  Object.entries(props).forEach(([k,v]) => {
+    if (k === 'class') node.className = v;
+    else if (k.startsWith('data-')) node.setAttribute(k, v);
+    else node[k] = v;
+  });
+  children.forEach(ch => { if (typeof ch === 'string') node.appendChild(document.createTextNode(ch)); else if (ch) node.appendChild(ch); });
+  return node;
+}
+function fmtTime(ts = Date.now()){ return new Date(ts).toLocaleString(); }
+function smallText(s){ return el('div', { class: 'small-txt' }, s); }
 
-    /* models */
-    async function populateModelDropdown() {
-      const inner = document.getElementById('modelDropdownInner');
-      inner.innerHTML = '<div class="text-xs text-gray-400">Loading models...</div>';
-      try {
-        const resp = await fetch('/api/models');
-        if (!resp.ok) throw new Error('Failed to load models');
-        const data = await resp.json();
-        const models = data.models || [];
-        inner.innerHTML = '';
-        models.forEach((m,i) => {
-          const opt = el('div', { class:'flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-50 cursor-pointer model-option', 'data-model': m.id, 'data-icon': m.icon || '🖼️', 'data-name': m.name || m.id });
-          opt.innerHTML = `<div class="text-xl">${m.icon || '🖼️'}</div><div><div class="text-sm font-medium">${m.name || m.id}</div><div class="text-xs text-gray-500">${m.desc || ''}</div></div>`;
-          opt.addEventListener('click', ()=> selectModelFromElement(opt));
-          inner.appendChild(opt);
-          if (i===0) {
-            document.getElementById('selectedModelName').textContent = m.name || m.id;
-            document.getElementById('selectedModelIcon').textContent = m.icon || '🖼️';
-            document.getElementById('modelDropdown').dataset.selectedModel = m.id;
-          }
-        });
-        if (models.length===0) inner.innerHTML = '<div class="text-xs text-gray-400">No models returned from server</div>';
-      } catch (err) {
-        console.warn('Could not fetch models:', err);
-        inner.innerHTML = '<div class="text-xs text-gray-400">Failed to load — using fallback</div>';
+/* -------------------------
+   Model icons (silhouette mapping)
+   Map model id -> inline SVG (black silhouette)
+-------------------------*/
+function modelIconSvg(id) {
+  // Simple black silhouette SVGs (kept small, monochrome)
+  const svgs = {
+    flux: '<svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C9 6 6 8 4 9c2 2 6 4 8 6s6 2 8 0c0-4-4-9-8-13z" fill="#111"/></svg>',
+    turbo: '<svg class="silhouette" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12c3-4 8-6 10-6s7 2 10 6c-3 4-8 6-10 6S5 16 2 12z" fill="#111"/></svg>',
+    'flux-realism': '<svg class="silhouette" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" fill="#111"/></svg>',
+    kontext: '<svg class="silhouette" viewBox="0 0 24 24"><path d="M3 7h18v10H3z" fill="#111"/></svg>',
+    realism: '<svg class="silhouette" viewBox="0 0 24 24"><circle cx="12" cy="10" r="5" fill="#111"/></svg>',
+    stable: '<svg class="silhouette" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" fill="#111"/></svg>',
+    default: '<svg class="silhouette" viewBox="0 0 24 24"><path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z" fill="#111"/></svg>'
+  };
+  return svgs[id] || svgs.default;
+}
+
+/* -------------------------
+   Populate models
+-------------------------*/
+async function populateModelDropdown() {
+  const inner = document.getElementById('modelDropdownInner');
+  inner.innerHTML = '<div class="text-xs text-gray-400">Loading models...</div>';
+  try {
+    const resp = await fetch('/api/models');
+    const data = await resp.json();
+    const models = (data && data.models) ? data.models : [];
+    inner.innerHTML = '';
+    models.forEach((m,i) => {
+      const div = document.createElement('div');
+      div.className = 'model-option flex items-center gap-3 px-3 py-2 rounded cursor-pointer';
+      div.setAttribute('data-model', m.id);
+      div.setAttribute('data-requires-auth', m.requiresAuth ? 'true' : 'false');
+      div.setAttribute('data-desc', m.desc || '');
+      div.innerHTML = `${modelIconSvg(m.id)}<div><div class="text-sm font-medium">${m.name || m.id}</div><div class="text-xs muted">${m.desc || ''}</div></div>`;
+      div.addEventListener('click', () => selectModelFromElement(div));
+      inner.appendChild(div);
+      if (i===0) {
+        selectModelFromElement(div);
       }
-    }
-    function toggleModelDropdown(){
-      const btn = document.getElementById('modelDropdownButton');
-      const dropdown = document.getElementById('modelDropdown');
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', (!expanded).toString());
-      dropdown.classList.toggle('open');
-    }
-    function selectModelFromElement(el){
-      const model = el.getAttribute('data-model');
-      const icon = el.getAttribute('data-icon') || '🖼️';
-      const name = el.getAttribute('data-name') || model;
-      document.getElementById('selectedModelName').textContent = name;
-      document.getElementById('selectedModelIcon').textContent = icon;
-      document.getElementById('modelDropdown').dataset.selectedModel = model;
-      document.getElementById('modelDropdownButton').setAttribute('aria-expanded','false');
-      document.getElementById('modelDropdown').classList.remove('open');
-    }
-
-    /* results & preview (similar to earlier) */
-    const resultsArea = document.getElementById('resultsArea');
-    const statusSummary = document.getElementById('statusSummary');
-
-    function updateStatusSummary(){
-      const cards = resultsArea.querySelectorAll('.image-card');
-      const total = cards.length;
-      const rendering = resultsArea.querySelectorAll('.image-card[data-status="rendering"]').length;
-      const done = resultsArea.querySelectorAll('.image-card[data-status="done"]').length;
-      const err = resultsArea.querySelectorAll('.image-card[data-status="error"]').length;
-      statusSummary.textContent = `Total: ${total} · Rendering: ${rendering} · Done: ${done} · Error: ${err}`;
-    }
-
-    function createResultCard({ id, prompt, model, seed, width, height }){
-      const card = el('div', { class:'image-card bg-white rounded-lg p-3 border border-gray-100', 'data-id': id, 'data-status': 'rendering' });
-      const header = el('div', { class:'flex items-start justify-between gap-2 mb-2' });
-      const left = el('div', { class:'flex items-start gap-3' });
-      left.appendChild(el('div', { class:'w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-bold' }, 'T'));
-      const meta = el('div', {});
-      meta.appendChild(el('div', { class:'text-sm font-medium' }, (prompt.length>80 ? prompt.slice(0,80)+'…' : prompt)));
-      meta.appendChild(el('div', { class:'text-xs text-gray-500' }, `Model: ${model} · ${width}×${height}`));
-      left.appendChild(meta);
-      header.appendChild(left);
-      const right = el('div', {});
-      right.appendChild(makeStatusPill('rendering'));
-      header.appendChild(right);
-
-      const imgWrap = el('div', { class:'mt-3 bg-gray-50 rounded overflow-hidden flex items-center justify-center', style: 'height:180px' });
-      imgWrap.appendChild(el('div', { class:'text-xs text-gray-400' }, 'Rendering preview…'));
-
-      const actions = el('div', { class:'mt-3 flex items-center gap-2' });
-      const previewBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Preview');
-      const downloadBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Download');
-      const copyBtn = el('button', { class:'px-2 py-1 text-sm bg-white border rounded' }, 'Copy Prompt');
-      const delBtn = el('button', { class:'px-2 py-1 text-sm bg-red-50 border border-red-200 rounded' }, 'Delete');
-      actions.appendChild(previewBtn); actions.appendChild(downloadBtn); actions.appendChild(copyBtn); actions.appendChild(delBtn);
-
-      card.appendChild(header); card.appendChild(imgWrap); card.appendChild(actions);
-
-      previewBtn.addEventListener('click', ()=> openPreview(card.dataset));
-      downloadBtn.addEventListener('click', ()=> { const url = card.getAttribute('data-imageurl'); if (url) downloadImage(url); else alert('Image not ready'); });
-      copyBtn.addEventListener('click', ()=> { navigator.clipboard.writeText(prompt); alert('Prompt copied'); });
-      delBtn.addEventListener('click', ()=> { if (confirm('Delete this result?')) card.remove(); updateStatusSummary(); });
-
-      function updateReady({ imageUrl, details }){
-        card.setAttribute('data-imageurl', imageUrl);
-        card.setAttribute('data-status', 'done');
-        right.replaceChild(makeStatusPill('done'), right.firstChild);
-        imgWrap.innerHTML = '';
-        const img = el('img', { src: imageUrl, alt: prompt, class:'w-full h-full object-cover cursor-pointer', style: 'max-height:180px' });
-        img.addEventListener('click', ()=> openPreview({ id, prompt, model, seed, width, height, imageUrl, details, time: Date.now(), status: 'done' }));
-        imgWrap.appendChild(img);
-        card.dataset.prompt = prompt; card.dataset.model = model; card.dataset.seed = seed || ''; card.dataset.width = width; card.dataset.height = height; card.dataset.generatedAt = Date.now();
-        updateStatusSummary();
-      }
-
-      function updateError(errMsg){
-        card.setAttribute('data-status', 'error');
-        right.replaceChild(makeStatusPill('error'), right.firstChild);
-        imgWrap.innerHTML = '';
-        imgWrap.appendChild(el('div', { class:'text-xs text-red-600' }, 'Failed to generate'));
-        imgWrap.appendChild(el('div', { class:'text-xs text-gray-500 mt-2' }, errMsg || 'Unknown error'));
-        card.dataset.error = errMsg || '';
-        updateStatusSummary();
-      }
-
-      return { card, updateReady, updateError };
-    }
-
-    function openPreview(data = {}){
-      const modal = document.getElementById('previewModal');
-      document.getElementById('previewImage').src = data.imageUrl || data['imageUrl'] || '';
-      document.getElementById('previewPrompt').textContent = data.prompt || data['prompt'] || '';
-      document.getElementById('previewModelDetail').textContent = data.model || data['model'] || '';
-      document.getElementById('previewSeedDetail').textContent = data.seed || data['seed'] || '—';
-      document.getElementById('previewSizeDetail').textContent = `${data.width || data['width'] || '—'} × ${data.height || data['height'] || '—'}`;
-      document.getElementById('previewTimeDetail').textContent = data.time ? fmtTime(data.time) : (data.generatedAt ? fmtTime(Number(data.generatedAt)) : '—');
-      document.getElementById('previewDetailText').textContent = data.details || data.detail || data.error || '';
-      const statusPill = document.getElementById('previewStatusPill');
-      statusPill.className = 'status-pill ' + ((data.status === 'rendering') ? 'status-rendering' : (data.status === 'error') ? 'status-error' : 'status-done');
-      statusPill.textContent = (data.status === 'rendering') ? 'Rendering' : (data.status === 'error') ? 'Error' : 'Done';
-      document.getElementById('previewModel').textContent = data.model || data['model'] || '';
-      const dBtn = document.getElementById('previewDownloadBtn');
-      dBtn.onclick = () => { if (data.imageUrl) downloadImage(data.imageUrl); else alert('No image to download'); };
-      modal.classList.remove('hidden'); modal.classList.add('flex');
-    }
-    function closePreview(){ const modal = document.getElementById('previewModal'); modal.classList.remove('flex'); modal.classList.add('hidden'); }
-    function downloadImage(url){ if (!url) return; const a = document.createElement('a'); a.href = url; a.download = `taurus-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); }
-
-    /* generate flow: keeps prompt in textarea & uses imageRefUrl (if pasted) for image->image */
-    let counter = 0;
-    async function generateImage(){
-      const promptEl = document.getElementById('promptInput');
-      const prompt = (promptEl.value || '').trim();
-      if (!prompt) return alert('Masukkan prompt terlebih dahulu');
-
-      const width = parseInt(document.getElementById('widthInput').value) || 1024;
-      const height = parseInt(document.getElementById('heightInput').value) || 1024;
-      const nologo = document.getElementById('nologoCheck').checked;
-      const enhance = document.getElementById('enhanceCheck').checked;
-      const nsfw = document.getElementById('nsfwToggle').checked;
-      const seed = document.getElementById('seedInput').value || undefined;
-      const model = document.getElementById('modelDropdown').dataset.selectedModel || 'flux';
-      const imageRef = (document.getElementById('imageRefUrl').value || '').trim() || undefined;
-      const batch = parseInt(document.getElementById('batchCount')?.value) || 1;
-
-      // create card(s) placeholders and send requests
-      for (let i=0;i<batch;i++){
-        const id = 'r' + (++counter);
-        const { card, updateReady, updateError } = createResultCard({ id, prompt, model, seed, width, height });
-        resultsArea.insertBefore(card, resultsArea.firstChild);
-        updateStatusSummary();
-
-        const payload = { prompt, model, width, height };
-        if (seed) payload.seed = seed;
-        if (nologo) payload.nologo = true;
-        if (enhance) payload.enhance = true;
-        if (nsfw) payload.nsfw = true;
-        if (imageRef) payload.imageUrl = imageRef; // send to backend for image->image if supported
-
-        try {
-          const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          let data = {};
-          try { data = await response.json(); } catch(e){}
-
-          if (!response.ok || !data || !data.success) {
-            const detail = (data && (data.details || data.error)) ? (data.details || data.error) : `HTTP ${response.status}`;
-            updateError(detail);
-            // also send to /api/logs for collection
-            try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'Generate failed', details: detail }) }); } catch(e){}
-            continue;
-          }
-
-          updateReady({ imageUrl: data.imageUrl, details: data.message || '' });
-          statusSummary.textContent = `Last: ${fmtTime()}`;
-        } catch (err) {
-          updateError(err?.message || String(err));
-          try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'Network generate error', details: String(err) }) }); } catch(e){}
-        }
-      }
-    }
-
-    /* --- image reference preview logic: detect paste or input and show preview --- */
-    const imageRefInput = document.getElementById('imageRefUrl');
-    const imageRefPreviewWrap = document.getElementById('imageRefPreviewWrap');
-    const imageRefPreview = document.getElementById('imageRefPreview');
-    const clearImageRefBtn = document.getElementById('clearImageRef');
-
-    function isLikelyImageUrl(url) {
-      if (!url || typeof url !== 'string') return false;
-      try { const u = new URL(url); } catch (e) { return false; }
-      return /\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(url.split('?')[0]);
-    }
-
-    async function tryShowImagePreview(url){
-      if (!url) { imageRefPreviewWrap.classList.add('hidden'); imageRefPreview.src=''; return; }
-      // set tiny thumbnail immediately
-      imageRefPreview.src = url;
-      // test load
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          imageRefPreview.src = url;
-          imageRefPreviewWrap.classList.remove('hidden');
-          resolve(true);
-        };
-        img.onerror = () => {
-          imageRefPreviewWrap.classList.add('hidden');
-          imageRefPreview.src = '';
-          resolve(false);
-        };
-        img.src = url;
-      });
-    }
-
-    imageRefInput.addEventListener('input', (e) => {
-      const v = (e.target.value || '').trim();
-      if (isLikelyImageUrl(v)) tryShowImagePreview(v);
-      else { imageRefPreviewWrap.classList.add('hidden'); imageRefPreview.src = ''; }
     });
+    if (models.length === 0) inner.innerHTML = '<div class="text-xs text-gray-400">No models found</div>';
+  } catch (err) {
+    console.warn('populateModelDropdown failed', err);
+    inner.innerHTML = '<div class="text-xs text-gray-400">Failed to load — using fallback</div>';
+  }
+}
 
-    // handle paste anywhere: if clipboardText is an image url, auto-fill the imageRefUrl input and preview
-    document.addEventListener('paste', (ev) => {
-      const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
-      if (isLikelyImageUrl(text)) {
+function toggleModelDropdown(){
+  const btn = document.getElementById('modelDropdownButton');
+  const dd = document.getElementById('modelDropdown');
+  const open = dd.classList.toggle('hidden');
+  btn.setAttribute('aria-expanded', (!open).toString());
+}
+
+function selectModelFromElement(el) {
+  const model = el.getAttribute('data-model');
+  const requiresAuth = el.getAttribute('data-requires-auth') === 'true';
+  const desc = el.getAttribute('data-desc') || '';
+  document.getElementById('selectedModelName').textContent = el.querySelector('.text-sm')?.textContent || model;
+  const iconWrap = document.getElementById('selectedModelIcon');
+  iconWrap.innerHTML = el.querySelector('.silhouette')?.outerHTML || modelIconSvg(model);
+  document.getElementById('modelDropdown').dataset.selectedModel = model;
+  // show/hide kontext image ref section
+  const imageRefSection = document.getElementById('imageRefSection');
+  if (model === 'kontext') {
+    imageRefSection.style.display = 'block';
+    document.getElementById('useImgAspectBtn').classList.remove('hidden');
+  } else {
+    imageRefSection.style.display = 'none';
+    document.getElementById('useImgAspectBtn').classList.add('hidden');
+  }
+  // show auth warning if model requires auth
+  const warn = document.getElementById('modelAuthWarning');
+  if (requiresAuth) {
+    warn.innerHTML = `Model requires server API key (POLLINATIONS_API_KEY) or test key. See Settings.`;
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+    warn.innerHTML = '';
+  }
+  // close dropdown
+  document.getElementById('modelDropdown').classList.add('hidden');
+  document.getElementById('modelDropdownButton').setAttribute('aria-expanded','false');
+}
+
+/* -------------------------
+   Aspect ratio helpers & presets
+-------------------------*/
+function setPresetAspect(a,b) {
+  const width = parseInt(document.getElementById('widthInput').value) || 1024;
+  const newW = Math.max(128, Math.round(width));
+  const newH = Math.max(128, Math.round(newW * (b / a)));
+  document.getElementById('widthInput').value = newW;
+  document.getElementById('heightInput').value = newH;
+  document.getElementById('detectedAspectLabel').textContent = `${a}:${b}`;
+}
+
+/* when ref image detected, show actual aspect option */
+document.getElementById('useImgAspectBtn').addEventListener('click', () => {
+  if (window._lastRefAspect) {
+    const [w,h] = window._lastRefAspect;
+    document.getElementById('widthInput').value = Math.max(128, Math.round(w));
+    document.getElementById('heightInput').value = Math.max(128, Math.round(h));
+    document.getElementById('detectedAspectLabel').textContent = `Ref ${Math.round(w)}×${Math.round(h)}`;
+  }
+});
+
+/* -------------------------
+   Image reference preview & paste/add flow
+-------------------------*/
+const imgRefInput = document.getElementById('imageRefUrl');
+const addImgBtn = document.getElementById('addImageRefBtn');
+const imgRefPreviewWrap = document.getElementById('imageRefPreviewWrap');
+const imgRefPreview = document.getElementById('imageRefPreview');
+const imgRefInfo = document.getElementById('imageRefInfo');
+const imgRefSize = document.getElementById('imageRefSize');
+
+function isLikelyImageUrl(url) {
+  if (!url) return false;
+  try { new URL(url); } catch(e) { return false; }
+  return /\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(url.split('?')[0]);
+}
+
+// show 'Add' when pasting a likely image url
+imgRefInput.addEventListener('input', (e) => {
+  const v = (e.target.value || '').trim();
+  if (isLikelyImageUrl(v)) {
+    addImgBtn.classList.remove('hidden');
+  } else {
+    addImgBtn.classList.add('hidden');
+  }
+});
+
+// on Add - validate and preview, detect aspect & size
+addImgBtn.addEventListener('click', async () => {
+  const url = (imgRefInput.value || '').trim();
+  if (!isLikelyImageUrl(url)) { alert('URL not recognized as an image'); return; }
+  // try to load
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imgRefPreview.src = url;
+      imgRefPreviewWrap.classList.remove('hidden');
+      addImgBtn.classList.add('hidden');
+      // auto-detect aspect and offer to apply
+      const naturalW = img.naturalWidth || Number(document.getElementById('widthInput').value) || 1024;
+      const naturalH = img.naturalHeight || Number(document.getElementById('heightInput').value) || 1024;
+      window._lastRefAspect = [naturalW, naturalH];
+      imgRefInfo.textContent = `${naturalW}×${naturalH}`;
+      imgRefSize.textContent = `${Math.round((naturalW*naturalH)/1000)} kpx`;
+      // show the Use ref aspect button
+      document.getElementById('useImgAspectBtn').classList.remove('hidden');
+      // set default width/height to reference aspect proportion (scale to 1024 width)
+      const scaleW = 1024;
+      document.getElementById('widthInput').value = scaleW;
+      document.getElementById('heightInput').value = Math.max(128, Math.round(scaleW * (naturalH/naturalW)));
+    };
+    img.onerror = () => {
+      alert('Failed to load preview image (CORS or unreachable). The URL may be blocked.');
+      imgRefPreviewWrap.classList.add('hidden');
+      addImgBtn.classList.remove('hidden');
+    };
+    img.src = url;
+  } catch (e) {
+    console.error('preview error', e);
+    alert('Error previewing image');
+  }
+});
+
+// support paste anywhere: if clipboard is image url and kontext selected, auto-fill and show Add
+document.addEventListener('paste', (ev) => {
+  try {
+    const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
+    if (isLikelyImageUrl(text)) {
+      // only show if kontext is selected
+      const model = document.getElementById('modelDropdown').dataset.selectedModel;
+      if (model === 'kontext') {
+        imgRefInput.value = text;
+        addImgBtn.classList.remove('hidden');
         ev.preventDefault();
-        imageRefInput.value = text;
-        tryShowImagePreview(text);
       }
-    });
+    }
+  } catch(e) {}
+});
 
-    clearImageRefBtn.addEventListener('click', () => {
-      imageRefInput.value = '';
-      imageRefPreviewWrap.classList.add('hidden');
-      imageRefPreview.src = '';
-    });
+/* -------------------------
+   Results grid + create result card (compact)
+-------------------------*/
+const resultsArea = document.getElementById('resultsArea');
+const statusSummary = document.getElementById('statusSummary');
 
-    /* init */
-    document.addEventListener('DOMContentLoaded', () => {
-      populateModelDropdown().catch(()=>{});
-      document.getElementById('generateBtn').addEventListener('click', generateImage);
-      document.getElementById('promptInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          generateImage();
-        }
-      });
-      // ensure batchCount element exists (hidden) to keep compatibility
-      if (!document.getElementById('batchCount')) {
-        const bc = document.createElement('input');
-        bc.type = 'number'; bc.id = 'batchCount'; bc.value = '1'; bc.min = '1'; bc.max = '4'; bc.style.display='none';
-        document.body.appendChild(bc);
-      }
-    });
+function updateStatusSummary() {
+  const cards = resultsArea.querySelectorAll('.image-card');
+  const total = cards.length;
+  const rendering = resultsArea.querySelectorAll('.image-card[data-status="rendering"]').length;
+  const done = resultsArea.querySelectorAll('.image-card[data-status="done"]').length;
+  const err = resultsArea.querySelectorAll('.image-card[data-status="error"]').length;
+  statusSummary.textContent = `Total ${total} · Rendering ${rendering} · Done ${done} · Error ${err}`;
+}
 
-    // close preview when clicking backdrop
-    document.getElementById('previewModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('previewModal') || e.target.classList.contains('modal-backdrop')) closePreview();
+function makeStatusPill(status) {
+  const span = el('span', { class: 'status-pill ' + (status === 'rendering' ? 'status-rendering' : status === 'done' ? 'status-done' : 'status-error') });
+  if (status === 'rendering') span.innerHTML = '<span class="loading"></span><span>Rendering</span>';
+  else if (status === 'done') span.textContent = 'Done';
+  else span.textContent = 'Error';
+  return span;
+}
+
+function createResultCard({ id, prompt, model, seed, width, height }) {
+  const card = el('div', { class: 'image-card bg-white rounded-lg p-2 border border-gray-100', 'data-id': id, 'data-status': 'rendering' });
+  const header = el('div', { class: 'flex items-center justify-between gap-2 mb-2' });
+  const left = el('div', { class: 'flex items-center gap-2' });
+  left.appendChild(el('div', { class: 'w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center text-sm font-bold' }, 'T'));
+  const meta = el('div', {});
+  meta.appendChild(el('div', { class: 'text-sm font-medium truncate', title: prompt }, prompt.length > 60 ? prompt.slice(0,60) + '…' : prompt));
+  meta.appendChild(el('div', { class: 'text-xs muted' }, `${model} • ${width}×${height}`));
+  left.appendChild(meta);
+  header.appendChild(left);
+  header.appendChild(makeStatusPill('rendering'));
+  card.appendChild(header);
+
+  const imgWrap = el('div', { class: 'mb-2' });
+  const placeholder = el('div', { class: 'bg-gray-50 rounded-md flex items-center justify-center', style: 'height:120px' }, el('div', { class: 'muted' }, 'Rendering…'));
+  imgWrap.appendChild(placeholder);
+  card.appendChild(imgWrap);
+
+  const actions = el('div', { class: 'flex items-center gap-2' });
+  const previewBtn = el('button', { class: 'px-2 py-1 text-xs bg-white border rounded' }, 'Preview');
+  const downloadBtn = el('button', { class: 'px-2 py-1 text-xs bg-white border rounded' }, 'Download');
+  const delBtn = el('button', { class: 'px-2 py-1 text-xs bg-red-50 border border-red-200 rounded' }, 'Delete');
+  actions.appendChild(previewBtn); actions.appendChild(downloadBtn); actions.appendChild(delBtn);
+  card.appendChild(actions);
+
+  previewBtn.addEventListener('click', () => openPreview(card.dataset));
+  downloadBtn.addEventListener('click', () => {
+    const url = card.getAttribute('data-imageurl');
+    if (url) downloadImage(url);
+    else alert('Image not ready');
+  });
+  delBtn.addEventListener('click', () => { if (confirm('Delete this result?')) card.remove(); updateStatusSummary(); });
+
+  function updateReady({ imageUrl, details }) {
+    card.setAttribute('data-imageurl', imageUrl);
+    card.setAttribute('data-status', 'done');
+    // replace status pill
+    const headRight = header.querySelector('.status-pill');
+    headRight.replaceWith(makeStatusPill('done'));
+    // thumbnail
+    imgWrap.innerHTML = '';
+    const img = el('img', { src: imageUrl, alt: prompt, class: 'image-thumb', loading: 'lazy' });
+    img.addEventListener('click', () => openPreview({ id, prompt, model, seed, width, height, imageUrl, details, time: Date.now(), status: 'done' }));
+    imgWrap.appendChild(img);
+    // attach dataset details
+    card.dataset.prompt = prompt;
+    card.dataset.model = model;
+    card.dataset.seed = seed || '';
+    card.dataset.width = width;
+    card.dataset.height = height;
+    card.dataset.generatedAt = Date.now();
+    updateStatusSummary();
+  }
+
+  function updateError(errMsg) {
+    card.setAttribute('data-status', 'error');
+    const headRight = header.querySelector('.status-pill');
+    headRight.replaceWith(makeStatusPill('error'));
+    imgWrap.innerHTML = '';
+    imgWrap.appendChild(el('div', { class: 'text-xs text-red-600' }, 'Failed'));
+    imgWrap.appendChild(el('div', { class: 'text-xs muted mt-1' }, errMsg || 'Unknown error'));
+    card.dataset.error = errMsg || '';
+    updateStatusSummary();
+  }
+
+  return { card, updateReady, updateError };
+}
+
+/* -------------------------
+   Preview modal functions
+-------------------------*/
+function openPreview(data = {}) {
+  const modal = document.getElementById('previewModal');
+  document.getElementById('previewImage').src = data.imageUrl || data['imageUrl'] || '';
+  document.getElementById('previewPrompt').textContent = data.prompt || data['prompt'] || '';
+  document.getElementById('previewModelDetail').textContent = data.model || data['model'] || '';
+  document.getElementById('previewSeedDetail').textContent = data.seed || data['seed'] || '—';
+  document.getElementById('previewSizeDetail').textContent = `${data.width || data['width'] || '—'} × ${data.height || data['height'] || '—'}`;
+  document.getElementById('previewTimeDetail').textContent = data.time ? fmtTime(data.time) : (data.generatedAt ? fmtTime(Number(data.generatedAt)) : '—');
+  document.getElementById('previewDetailText').textContent = data.details || data.detail || data.error || '';
+  const statusPill = document.getElementById('previewStatusPill');
+  statusPill.className = 'status-pill ' + ((data.status === 'rendering') ? 'status-rendering' : (data.status === 'error') ? 'status-error' : 'status-done');
+  statusPill.textContent = (data.status === 'rendering') ? 'Rendering' : (data.status === 'error') ? 'Error' : 'Done';
+  document.getElementById('previewModel').textContent = data.model || data['model'] || '';
+  document.getElementById('previewDownloadBtn').onclick = () => { if (data.imageUrl) downloadImage(data.imageUrl); else alert('No image'); };
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+}
+function closePreview() { const modal = document.getElementById('previewModal'); modal.classList.remove('flex'); modal.classList.add('hidden'); }
+function downloadImage(url) { if (!url) return; const a = document.createElement('a'); a.href = url; a.download = `taurus-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); }
+
+/* -------------------------
+   Generate flow (uses session key if present)
+-------------------------*/
+function sessionKey() { try { return localStorage.getItem('POLLINATIONS_SESSION_KEY'); } catch (e) { return null; } }
+function setSessionKey(k) { try { if (k) localStorage.setItem('POLLINATIONS_SESSION_KEY', k); else localStorage.removeItem('POLLINATIONS_SESSION_KEY'); } catch(e){} }
+
+let counter = 0;
+async function generateImage() {
+  const prompt = (document.getElementById('promptInput').value || '').trim();
+  if (!prompt) return alert('Masukkan prompt terlebih dahulu');
+
+  const width = parseInt(document.getElementById('widthInput').value) || 1024;
+  const height = parseInt(document.getElementById('heightInput').value) || 1024;
+  const seedInput = document.getElementById('seedInput').value;
+  const lockSeed = document.getElementById('lockSeed').checked;
+  // seed handling: if locked and value present, keep; if empty generate random; if provided use it
+  let seed;
+  if (seedInput) seed = Number(seedInput);
+  else seed = Math.floor(Math.random() * 1000000);
+  if (lockSeed) {
+    // preserve seed in input for subsequent requests
+    document.getElementById('seedInput').value = seed;
+  }
+
+  const model = document.getElementById('modelDropdown').dataset.selectedModel || 'flux';
+  const imageRefValue = (document.getElementById('imageRefUrl').value || '').trim() || undefined;
+  const clientKey = sessionKey();
+
+  // create placeholder card
+  const id = 'r' + (++counter);
+  const { card, updateReady, updateError } = createResultCard({ id, prompt, model, seed, width, height });
+  resultsArea.insertBefore(card, resultsArea.firstChild);
+  updateStatusSummary();
+
+  const payload = { prompt, model, width, height, seed };
+  if (imageRefValue && model === 'kontext') payload.imageUrl = imageRefValue;
+  if (clientKey) payload.clientKey = clientKey;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-  </script>
+    const data = await resp.json().catch(()=>({}));
+    if (!resp.ok || !data || !data.success) {
+      const details = (data && (data.details || data.error)) ? (data.details || data.error) : `HTTP ${resp.status}`;
+      updateError(details);
+      // also send to logs endpoint best-effort
+      try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'generate failed', details }) }); } catch(e){}
+      return;
+    }
+    updateReady({ imageUrl: data.imageUrl, details: data.message || '' });
+    updateStatusSummary();
+  } catch (err) {
+    updateError(err?.message || String(err));
+    try { await fetch('/api/logs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ level:'error', message:'network error generate', details: String(err) }) }); } catch(e){}
+  }
+}
+
+/* -------------------------
+   Seed helpers
+-------------------------*/
+document.getElementById('randomSeedBtn').addEventListener('click', () => {
+  document.getElementById('seedInput').value = Math.floor(Math.random() * 1000000);
+});
+
+/* -------------------------
+   Clear all
+-------------------------*/
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (confirm('Clear all results?')) { resultsArea.innerHTML = ''; updateStatusSummary(); }
+});
+
+/* -------------------------
+   Init
+-------------------------*/
+document.addEventListener('DOMContentLoaded', () => {
+  populateModelDropdown().catch(()=>{});
+  document.getElementById('generateBtn').addEventListener('click', generateImage);
+  // Enter to submit
+  document.getElementById('promptInput').addEventListener('keydown', (e) => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); generateImage(); } });
+
+  // ensure addImgBtn toggles visibility based on input initial state
+  if (isLikelyImageUrl(imgRefInput.value)) addImgBtn.classList.remove('hidden');
+});
+
+/* close preview on backdrop click */
+document.getElementById('previewModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('previewModal') || e.target.classList.contains('modal-backdrop')) closePreview();
+});
+</script>
 </body>
 </html>
